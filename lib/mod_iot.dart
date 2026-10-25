@@ -34,11 +34,14 @@ class IotModule implements AppModule {
         builder: (context) => Card(
           child: ListTile(
             leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
-            title: const Text('Perangkat Rumah'),
-            subtitle: const Text('Kontrol saklar, lampu, dan sensor'),
+            title: const Text('Perangkat IoT'),
+            subtitle: const Text('Kontrol dan pantau perangkat rumah pintar'),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () => context.push('/iot'),
           ),
         ),
       );
+
+  @override
+  Widget get homeScreen => const DeviceListScreen();
 }
