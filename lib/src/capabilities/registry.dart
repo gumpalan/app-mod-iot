@@ -83,10 +83,7 @@ class CapabilityRegistry {
     return ListTile(
       leading: const Icon(Icons.sensors),
       title: const Text('Sensor'),
-      trailing: Text(
-        '$val',
-        style: Theme.of(context).textTheme.titleMedium,
-      ),
+      trailing: Text('$val', style: Theme.of(context).textTheme.titleMedium),
     );
   }
 
