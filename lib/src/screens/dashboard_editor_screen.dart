@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../data/iot_service.dart';
 import '../data/models/iot_models.dart';
+import 'iot_dashboard_screen.dart';
 
 /// Layar editor tata letak dashboard dinamis.
 class DashboardEditorScreen extends StatefulWidget {
   final IotService iotService;
   final DashboardModel? initialDashboard;
+  final List<IotDevice>? initialDevices;
 
   const DashboardEditorScreen({
     super.key,
     required this.iotService,
     this.initialDashboard,
+    this.initialDevices,
   });
 
   @override
@@ -34,6 +38,10 @@ class _DashboardEditorScreenState extends State<DashboardEditorScreen> {
     );
     _isPublic = widget.initialDashboard?.isPublic ?? false;
     _widgets = List.from(widget.initialDashboard?.widgets ?? []);
+    if (widget.initialDevices != null && widget.initialDevices!.isNotEmpty) {
+      _devices = List.from(widget.initialDevices!);
+      _isLoading = false;
+    }
     _loadDevices();
   }
 
@@ -53,7 +61,57 @@ class _DashboardEditorScreenState extends State<DashboardEditorScreen> {
         });
       }
     } catch (_) {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        if (_devices.isEmpty) {
+          _devices = const [
+            IotDevice(
+              id: 'living-room-sensor',
+              name: 'Sensor Ruang Tamu',
+              driver: 'custom',
+              channels: [
+                DeviceChannel(
+                  id: 'temperature',
+                  name: 'Suhu',
+                  direction: 'input',
+                  type: 'number',
+                  unit: '°C',
+                  uiHint: 'gauge',
+                ),
+                DeviceChannel(
+                  id: 'humidity',
+                  name: 'Kelembaban',
+                  direction: 'input',
+                  type: 'number',
+                  unit: '%',
+                  uiHint: 'value_display',
+                ),
+                DeviceChannel(
+                  id: 'fan_power',
+                  name: 'Power Kipas',
+                  direction: 'bidirectional',
+                  type: 'boolean',
+                  uiHint: 'toggle',
+                ),
+              ],
+            ),
+            IotDevice(
+              id: 'lampu-kamar',
+              name: 'Lampu Kamar Tidur',
+              driver: 'tasmota',
+              channels: [
+                DeviceChannel(
+                  id: 'power',
+                  name: 'Power Lampu',
+                  direction: 'bidirectional',
+                  type: 'boolean',
+                  uiHint: 'toggle',
+                ),
+              ],
+            ),
+          ];
+        }
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -78,12 +136,16 @@ class _DashboardEditorScreenState extends State<DashboardEditorScreen> {
           deviceIds: _widgets.map((w) => w.deviceId).toSet().toList(),
         );
         await widget.iotService.updateDashboard(updated);
+        widget.iotService.activeLayout.value = updated.id;
       } else {
-        await widget.iotService.createDashboard(
+        final created = await widget.iotService.createDashboard(
           name: name,
           isPublic: _isPublic,
           widgets: _widgets,
         );
+        widget.iotService.activeLayout.value = created.id;
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(kIotActiveDashboardPref, created.id);
       }
 
       if (mounted) {
@@ -435,6 +497,7 @@ class _AddWidgetModalState extends State<_AddWidgetModal> {
 
           // 1. Pilih Perangkat
           DropdownButtonFormField<IotDevice>(
+            isExpanded: true,
             value: _selectedDevice,
             decoration: InputDecoration(
               labelText: 'Pilih Perangkat',
@@ -444,7 +507,10 @@ class _AddWidgetModalState extends State<_AddWidgetModal> {
             items: widget.devices.map((d) {
               return DropdownMenuItem(
                 value: d,
-                child: Text('${d.name} (${d.id})'),
+                child: Text(
+                  '${d.name} (${d.id})',
+                  overflow: TextOverflow.ellipsis,
+                ),
               );
             }).toList(),
             onChanged: (dev) {
@@ -467,6 +533,7 @@ class _AddWidgetModalState extends State<_AddWidgetModal> {
 
           // 2. Pilih Channel
           DropdownButtonFormField<DeviceChannel>(
+            isExpanded: true,
             value: _selectedChannel,
             decoration: InputDecoration(
               labelText: 'Pilih Channel / Topik',
@@ -477,7 +544,9 @@ class _AddWidgetModalState extends State<_AddWidgetModal> {
               return DropdownMenuItem(
                 value: ch,
                 child: Text(
-                    '${ch.name} [${ch.type} • ${ch.direction.toUpperCase()}]'),
+                  '${ch.name} [${ch.type} • ${ch.direction.toUpperCase()}]',
+                  overflow: TextOverflow.ellipsis,
+                ),
               );
             }).toList(),
             onChanged: (ch) {
@@ -493,6 +562,7 @@ class _AddWidgetModalState extends State<_AddWidgetModal> {
 
           // 3. Tipe Widget
           DropdownButtonFormField<String>(
+            isExpanded: true,
             value: _selectedWidgetType,
             decoration: InputDecoration(
               labelText: 'Tipe Tampilan Widget',

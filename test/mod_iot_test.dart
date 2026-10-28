@@ -7,6 +7,10 @@ void main() {
     expect(module.id, equals('iot'));
     expect(module.name, equals('IoT'));
     expect(module.routes, isNotEmpty);
-    expect(module.homeCard, isNotNull);
+    expect(module.homeCard, isNull);
+    expect(module.menuEntries.length, equals(3));
+    expect(module.menuEntries[0].label, equals('Layout Saya'));
+    expect(module.menuEntries[1].label, equals('Jelajahi Layout Publik'));
+    expect(module.menuEntries[2].label, equals('Daftar Perangkat Terhubung'));
   });
 }

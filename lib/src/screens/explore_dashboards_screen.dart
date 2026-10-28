@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../data/iot_service.dart';
 import '../data/models/iot_models.dart';
+import 'iot_dashboard_screen.dart';
 
 /// Layar untuk menjelajahi dan mengkloning tata letak dashboard yang dibagikan pengguna lain.
 class ExploreDashboardsScreen extends StatefulWidget {
@@ -43,6 +45,9 @@ class _ExploreDashboardsScreenState extends State<ExploreDashboardsScreen> {
     setState(() => _cloningId = d.id);
     try {
       final cloned = await widget.iotService.cloneDashboard(d.id);
+      widget.iotService.activeLayout.value = cloned.id;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(kIotActiveDashboardPref, cloned.id);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

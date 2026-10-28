@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mod_iot/mod_iot.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MockIotService extends IotService {
   final List<DashboardModel> mockDashboards;
@@ -60,7 +61,44 @@ void main() {
     });
   });
 
+  group('ManageLayoutsSheet Widget Tests', () {
+    testWidgets('ManageLayoutsSheet renders layout list properly',
+        (tester) async {
+      SharedPreferences.setMockInitialValues({
+        kIotActiveDashboardPref: 'd1',
+      });
+
+      final mock = MockIotService(
+        mockDashboards: [
+          const DashboardModel(
+            id: 'd1',
+            userId: 'u1',
+            name: 'Dashboard Saya',
+            widgets: [],
+            deviceIds: [],
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ManageLayoutsSheet(iotService: mock),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('Layout Saya'), findsOneWidget);
+      expect(find.text('Dashboard Saya'), findsOneWidget);
+    });
+  });
+
   group('IotDashboardScreen Widget Tests', () {
+    setUp(() {
+      SharedPreferences.setMockInitialValues({});
+    });
     testWidgets('Tampil state kosong jika belum ada dashboard',
         (tester) async {
       final mock = MockIotService(mockDashboards: []);
@@ -75,13 +113,16 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('Dashboard IoT Belum Diatur'), findsOneWidget);
-      expect(find.text('Atur Dashboard Baru'), findsOneWidget);
-      expect(find.text('Jelajahi Layout Pengguna Lain'), findsOneWidget);
+      expect(find.text('Belum Ada Layout Dashboard'), findsOneWidget);
+      expect(find.text('Atur Layout Baru'), findsOneWidget);
     });
 
     testWidgets('Tampil kanvas widget jika dashboard sudah diatur',
         (tester) async {
+      SharedPreferences.setMockInitialValues({
+        kIotActiveDashboardPref: 'd1',
+      });
+
       final mock = MockIotService(
         mockDashboards: [
           const DashboardModel(
@@ -140,6 +181,7 @@ void main() {
           ),
         ],
       );
+      mock.activeLayout.value = 'd1';
 
       await tester.pumpWidget(
         MaterialApp(
@@ -151,7 +193,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('Kamar Tidur'), findsOneWidget);
+      // Kanvas bersih: nama dashboard tidak tampil lagi, hanya widget
       expect(find.text('Power Lampu'), findsOneWidget);
       expect(find.text('Suhu Ruangan'), findsOneWidget);
       expect(find.byType(Switch), findsOneWidget);

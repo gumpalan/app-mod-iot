@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:core_api/core_api.dart';
+import 'package:flutter/foundation.dart';
 import 'models/iot_models.dart';
 
 /// Service untuk orkestrasi data IoT, dashboard pengguna, dan stream WebSocket real-time.
@@ -16,15 +17,33 @@ class IotService {
 
   Stream<Map<String, dynamic>> get stateStream => _stateController.stream;
 
+  /// Notifikasi id layout dashboard yang sedang aktif.
+  /// Dibagi (shared) antar layar (dashboard, kelola layout, explore)
+  /// pada satu instance service agar perubahan langsung terlihat.
+  final activeLayout = ValueNotifier<String?>(null);
+
+  /// Notifikasi pembaruan data/daftar dashboard.
+  final dashboardsChanged = ValueNotifier<int>(0);
+
+  void notifyDashboardsChanged() {
+    dashboardsChanged.value++;
+  }
+
   IotService({
     ApiClient? client,
+    String? baseUrl,
     String? wsUrl,
   })  : apiClient = client ??
             ApiClient(
-              baseUrl: 'http://127.0.0.1:8002',
+              baseUrl: baseUrl ?? 'http://127.0.0.1:8080',
               tokenStorage: SharedPrefsTokenStorage(),
             ),
-        wsBaseUrl = wsUrl ?? 'ws://127.0.0.1:8002';
+        wsBaseUrl = wsUrl ??
+            (baseUrl != null
+                ? (baseUrl.startsWith('https://')
+                    ? baseUrl.replaceFirst('https://', 'wss://')
+                    : baseUrl.replaceFirst('http://', 'ws://'))
+                : 'ws://127.0.0.1:8080');
 
   /// Mengambil daftar seluruh perangkat dan status channel terkini.
   Future<List<IotDevice>> getDevices() async {
@@ -98,6 +117,7 @@ class IotService {
 
     if (response.statusCode == 201) {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
+      notifyDashboardsChanged();
       return DashboardModel.fromJson(data);
     }
     throw Exception('Gagal membuat dashboard (${response.statusCode})');
@@ -118,6 +138,7 @@ class IotService {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
+      notifyDashboardsChanged();
       return DashboardModel.fromJson(data);
     }
     throw Exception('Gagal memperbarui dashboard (${response.statusCode})');
@@ -129,6 +150,7 @@ class IotService {
     if (response.statusCode != 200) {
       throw Exception('Gagal menghapus dashboard (${response.statusCode})');
     }
+    notifyDashboardsChanged();
   }
 
   /// Mengambil layout dashboard publik pengguna lain yang kompatibel.
@@ -148,6 +170,7 @@ class IotService {
     final response = await apiClient.post('/iot/v1/dashboards/$id/clone');
     if (response.statusCode == 201) {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
+      notifyDashboardsChanged();
       return DashboardModel.fromJson(data);
     }
     throw Exception('Gagal mengkloning dashboard (${response.statusCode})');
@@ -200,5 +223,6 @@ class IotService {
     _pingTimer?.cancel();
     _socket?.close();
     _stateController.close();
+    activeLayout.dispose();
   }
 }
