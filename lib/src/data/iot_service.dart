@@ -176,6 +176,77 @@ class IotService {
     throw Exception('Gagal mengkloning dashboard (${response.statusCode})');
   }
 
+  // -------------------------------------------------------------------------
+  // Operasi Aturan Otomasi (Automation Rules)
+  // -------------------------------------------------------------------------
+
+  /// Mengambil daftar aturan otomasi milik pengguna saat ini.
+  Future<List<AutomationRule>> fetchRules() async {
+    final response = await apiClient.get('/iot/v1/rules');
+    if (response.statusCode == 200) {
+      final list = jsonDecode(response.body) as List<dynamic>;
+      return list
+          .map((item) => AutomationRule.fromJson(item as Map<String, dynamic>))
+          .toList();
+    }
+    throw Exception('Gagal memuat aturan otomasi (${response.statusCode})');
+  }
+
+  /// Membuat aturan otomasi baru.
+  Future<AutomationRule> createRule(AutomationRule rule) async {
+    final response = await apiClient.post(
+      '/iot/v1/rules',
+      body: rule.toJson(),
+    );
+    if (response.statusCode == 201) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      return AutomationRule.fromJson(data);
+    }
+    throw Exception('Gagal membuat aturan (${response.statusCode})');
+  }
+
+  /// Memperbarui aturan otomasi yang sudah ada.
+  Future<AutomationRule> updateRule(AutomationRule rule) async {
+    final response = await apiClient.put(
+      '/iot/v1/rules/${rule.id}',
+      body: rule.toJson(),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      return AutomationRule.fromJson(data);
+    }
+    throw Exception('Gagal memperbarui aturan (${response.statusCode})');
+  }
+
+  /// Mengubah status aktif/nonaktif aturan otomasi.
+  Future<bool> toggleRule(String id, bool enabled) async {
+    final response = await apiClient.patch(
+      '/iot/v1/rules/$id/toggle',
+      body: {'enabled': enabled},
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      return data['enabled'] as bool? ?? enabled;
+    }
+    throw Exception('Gagal mengubah status aturan (${response.statusCode})');
+  }
+
+  /// Menghapus aturan otomasi.
+  Future<void> deleteRule(String id) async {
+    final response = await apiClient.delete('/iot/v1/rules/$id');
+    if (response.statusCode != 200) {
+      throw Exception('Gagal menghapus aturan (${response.statusCode})');
+    }
+  }
+
+  /// Menjalankan uji coba eksekusi aksi aturan otomasi secara instan.
+  Future<void> testRule(String id) async {
+    final response = await apiClient.post('/iot/v1/rules/$id/test');
+    if (response.statusCode != 200) {
+      throw Exception('Gagal menguji aksi aturan (${response.statusCode})');
+    }
+  }
+
   /// Menghubungkan client WebSocket ke backend svc-iot.
   Future<void> connectWebSocket() async {
     try {

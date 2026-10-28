@@ -8,12 +8,16 @@ import 'src/data/iot_service.dart';
 import 'src/screens/dashboard_editor_screen.dart';
 import 'src/screens/device_list_screen.dart';
 import 'src/screens/explore_dashboards_screen.dart';
+import 'src/screens/automation_list_screen.dart';
+import 'src/screens/automation_editor_screen.dart';
 import 'src/screens/iot_dashboard_screen.dart';
 import 'src/screens/kelola_layouts.dart';
 
 export 'src/capabilities/registry.dart';
 export 'src/data/iot_service.dart';
 export 'src/data/models/iot_models.dart';
+export 'src/screens/automation_editor_screen.dart';
+export 'src/screens/automation_list_screen.dart';
 export 'src/screens/dashboard_editor_screen.dart';
 export 'src/screens/device_list_screen.dart';
 export 'src/screens/explore_dashboards_screen.dart';
@@ -69,6 +73,13 @@ class IotModule implements AppModule {
                 body: DeviceListScreen(service: _effectiveService),
               ),
             ),
+            GoRoute(
+              path: 'rules',
+              name: 'iot-rules',
+              builder: (context, state) => AutomationListScreen(
+                iotService: _effectiveService,
+              ),
+            ),
           ],
         ),
       ];
@@ -81,7 +92,8 @@ class IotModule implements AppModule {
   /// Daftar menu spesifik IoT pada tab "Menu":
   /// 1. Layout Saya (buka bottom sheet kelola layout, buat baru, ganti aktif, edit, hapus)
   /// 2. Jelajahi Layout Publik (salin layout pengguna lain)
-  /// 3. Daftar Perangkat Terhubung (lihat channel & kontrol langsung per unit)
+  /// 3. Aturan Otomasi (buat dan kelola otomasi trigger & action)
+  /// 4. Daftar Perangkat Terhubung (lihat channel & kontrol langsung per unit)
   @override
   List<MenuEntry> get menuEntries => [
         MenuEntry(
@@ -100,6 +112,12 @@ class IotModule implements AppModule {
           label: 'Jelajahi Layout Publik',
           icon: Icons.explore_outlined,
           path: '/iot/explore',
+        ),
+        MenuEntry(
+          id: 'iot_automation_rules',
+          label: 'Aturan Otomasi',
+          icon: Icons.auto_awesome_outlined,
+          path: '/iot/rules',
         ),
         MenuEntry(
           id: 'iot_connected_devices',

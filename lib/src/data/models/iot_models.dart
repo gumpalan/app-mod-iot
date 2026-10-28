@@ -226,3 +226,114 @@ class DashboardModel {
     'updatedAt': updatedAt,
   };
 }
+
+/// Model Aturan Otomasi IoT (Trigger -> Action)
+class AutomationRule {
+  final String id;
+  final String userId;
+  final String name;
+  final bool enabled;
+  final String triggerType; // 'state' | 'schedule'
+  final String? triggerDeviceId;
+  final String? triggerChannelId;
+  final String? triggerOperator;
+  final String? triggerValue;
+  final String? triggerCron;
+  final String actionDeviceId;
+  final String actionChannelId;
+  final String actionValue;
+  final int createdAt;
+  final int updatedAt;
+
+  const AutomationRule({
+    required this.id,
+    this.userId = '',
+    required this.name,
+    this.enabled = true,
+    required this.triggerType,
+    this.triggerDeviceId,
+    this.triggerChannelId,
+    this.triggerOperator,
+    this.triggerValue,
+    this.triggerCron,
+    required this.actionDeviceId,
+    required this.actionChannelId,
+    required this.actionValue,
+    this.createdAt = 0,
+    this.updatedAt = 0,
+  });
+
+  factory AutomationRule.fromJson(Map<String, dynamic> json) {
+    return AutomationRule(
+      id: json['id'] as String? ?? '',
+      userId: json['userId'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      enabled: json['enabled'] as bool? ?? true,
+      triggerType: json['triggerType'] as String? ?? 'state',
+      triggerDeviceId: json['triggerDeviceId'] as String?,
+      triggerChannelId: json['triggerChannelId'] as String?,
+      triggerOperator: json['triggerOperator'] as String?,
+      triggerValue: json['triggerValue'] as String?,
+      triggerCron: json['triggerCron'] as String?,
+      actionDeviceId: json['actionDeviceId'] as String? ?? '',
+      actionChannelId: json['actionChannelId'] as String? ?? '',
+      actionValue: json['actionValue']?.toString() ?? '',
+      createdAt: json['createdAt'] as int? ?? 0,
+      updatedAt: json['updatedAt'] as int? ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'userId': userId,
+    'name': name,
+    'enabled': enabled,
+    'triggerType': triggerType,
+    if (triggerDeviceId != null) 'triggerDeviceId': triggerDeviceId,
+    if (triggerChannelId != null) 'triggerChannelId': triggerChannelId,
+    if (triggerOperator != null) 'triggerOperator': triggerOperator,
+    if (triggerValue != null) 'triggerValue': triggerValue,
+    if (triggerCron != null) 'triggerCron': triggerCron,
+    'actionDeviceId': actionDeviceId,
+    'actionChannelId': actionChannelId,
+    'actionValue': actionValue,
+    'createdAt': createdAt,
+    'updatedAt': updatedAt,
+  };
+
+  AutomationRule copyWith({
+    String? id,
+    String? userId,
+    String? name,
+    bool? enabled,
+    String? triggerType,
+    String? triggerDeviceId,
+    String? triggerChannelId,
+    String? triggerOperator,
+    String? triggerValue,
+    String? triggerCron,
+    String? actionDeviceId,
+    String? actionChannelId,
+    String? actionValue,
+    int? createdAt,
+    int? updatedAt,
+  }) {
+    return AutomationRule(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      name: name ?? this.name,
+      enabled: enabled ?? this.enabled,
+      triggerType: triggerType ?? this.triggerType,
+      triggerDeviceId: triggerDeviceId ?? this.triggerDeviceId,
+      triggerChannelId: triggerChannelId ?? this.triggerChannelId,
+      triggerOperator: triggerOperator ?? this.triggerOperator,
+      triggerValue: triggerValue ?? this.triggerValue,
+      triggerCron: triggerCron ?? this.triggerCron,
+      actionDeviceId: actionDeviceId ?? this.actionDeviceId,
+      actionChannelId: actionChannelId ?? this.actionChannelId,
+      actionValue: actionValue ?? this.actionValue,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+}
