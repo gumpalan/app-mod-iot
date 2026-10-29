@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../data/iot_service.dart';
 import '../data/models/iot_models.dart';
 import 'iot_dashboard_screen.dart';
@@ -59,9 +60,9 @@ class _ExploreDashboardsScreenState extends State<ExploreDashboardsScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _cloningId = null);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal mengkloning layout: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gagal mengkloning layout: $e')));
       }
     }
   }
@@ -73,9 +74,7 @@ class _ExploreDashboardsScreenState extends State<ExploreDashboardsScreen> {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Jelajahi Layout Publik'),
-      ),
+      appBar: AppBar(title: const Text('Jelajahi Layout Publik')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
@@ -121,7 +120,9 @@ class _ExploreDashboardsScreenState extends State<ExploreDashboardsScreen> {
                     )
                   : ListView.builder(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 16),
+                        horizontal: 20,
+                        vertical: 16,
+                      ),
                       itemCount: _exploreList.length,
                       itemBuilder: (context, index) {
                         final item = _exploreList[index];
@@ -135,7 +136,9 @@ class _ExploreDashboardsScreenState extends State<ExploreDashboardsScreen> {
                             side: BorderSide(
                               color: isDark
                                   ? colors.outline.withValues(alpha: 0.2)
-                                  : colors.outlineVariant.withValues(alpha: 0.6),
+                                  : colors.outlineVariant.withValues(
+                                      alpha: 0.6,
+                                    ),
                             ),
                           ),
                           child: Padding(
@@ -149,8 +152,9 @@ class _ExploreDashboardsScreenState extends State<ExploreDashboardsScreen> {
                                       padding: const EdgeInsets.all(10),
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
-                                        color: colors.primary
-                                            .withValues(alpha: 0.12),
+                                        color: colors.primary.withValues(
+                                          alpha: 0.12,
+                                        ),
                                       ),
                                       child: Icon(
                                         Icons.dashboard_customize_rounded,
@@ -168,8 +172,8 @@ class _ExploreDashboardsScreenState extends State<ExploreDashboardsScreen> {
                                             item.name,
                                             style: theme.textTheme.titleMedium
                                                 ?.copyWith(
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                                  fontWeight: FontWeight.bold,
+                                                ),
                                           ),
                                           Text(
                                             'Oleh: ${item.userId} • ${item.widgets.length} widget',
@@ -193,12 +197,14 @@ class _ExploreDashboardsScreenState extends State<ExploreDashboardsScreen> {
                                   children: item.deviceIds.map((dev) {
                                     return Container(
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: 8, vertical: 3),
+                                        horizontal: 8,
+                                        vertical: 3,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: colors.primary
-                                            .withValues(alpha: 0.08),
-                                        borderRadius:
-                                            BorderRadius.circular(8),
+                                        color: colors.primary.withValues(
+                                          alpha: 0.08,
+                                        ),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(
                                         dev,
@@ -237,10 +243,14 @@ class _ExploreDashboardsScreenState extends State<ExploreDashboardsScreen> {
                                             mainAxisAlignment:
                                                 MainAxisAlignment.center,
                                             children: [
-                                              Icon(Icons.copy_rounded,
-                                                  size: 18),
+                                              Icon(
+                                                Icons.copy_rounded,
+                                                size: 18,
+                                              ),
                                               SizedBox(width: 8),
-                                              Text('Terapkan ke Dashboard Saya'),
+                                              Text(
+                                                'Terapkan ke Dashboard Saya',
+                                              ),
                                             ],
                                           ),
                                   ),

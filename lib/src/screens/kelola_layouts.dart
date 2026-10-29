@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../data/iot_service.dart';
 import '../data/models/iot_models.dart';
 import 'dashboard_editor_screen.dart';
@@ -67,8 +68,7 @@ class _ManageLayoutsSheetState extends State<ManageLayoutsSheet> {
       if (!mounted) return;
       setState(() {
         _layouts = list;
-        _activeId = active != null &&
-                list.any((d) => d.id == active)
+        _activeId = active != null && list.any((d) => d.id == active)
             ? active
             : (list.isNotEmpty ? list.first.id : null);
         _isLoading = false;
@@ -87,9 +87,9 @@ class _ManageLayoutsSheetState extends State<ManageLayoutsSheet> {
       widget.onChanged?.call();
     }
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Layout aktif diperbarui.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Layout aktif diperbarui.')));
     }
   }
 
@@ -153,9 +153,9 @@ class _ManageLayoutsSheetState extends State<ManageLayoutsSheet> {
     } catch (e) {
       if (mounted) {
         setState(() => _deletingId = null);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal menghapus layout: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gagal menghapus layout: $e')));
       }
     }
   }
@@ -213,235 +213,249 @@ class _ManageLayoutsSheetState extends State<ManageLayoutsSheet> {
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : _layouts.isEmpty
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.dashboard_customize_outlined,
-                                  size: 40,
-                                  color: colors.primary,
-                                ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  'Belum ada layout',
-                                  style: theme.textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Tekan "Buat Baru" untuk menyusun layout pertama Anda.',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: colors.onSurface
-                                        .withValues(alpha: 0.55),
-                                  ),
-                                ),
-                              ],
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.dashboard_customize_outlined,
+                              size: 40,
+                              color: colors.primary,
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              'Belum ada layout',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Tekan "Buat Baru" untuk menyusun layout pertama Anda.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: colors.onSurface.withValues(alpha: 0.55),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      controller: scrollController,
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                      itemCount: _layouts.length,
+                      itemBuilder: (context, index) {
+                        final dash = _layouts[index];
+                        final isActive = dash.id == _activeId;
+                        final isDeleting = _deletingId == dash.id;
+
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          elevation: isDark ? 0 : 1,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            side: BorderSide(
+                              color: isActive
+                                  ? colors.primary
+                                  : colors.outline.withValues(alpha: 0.15),
+                              width: isActive ? 1.5 : 1,
                             ),
                           ),
-                        )
-                      : ListView.builder(
-                          controller: scrollController,
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                          itemCount: _layouts.length,
-                          itemBuilder: (context, index) {
-                            final dash = _layouts[index];
-                            final isActive = dash.id == _activeId;
-                            final isDeleting = _deletingId == dash.id;
-
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 10),
-                              elevation: isDark ? 0 : 1,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                side: BorderSide(
-                                  color: isActive
-                                      ? colors.primary
-                                      : colors.outline.withValues(
-                                            alpha: 0.15,
-                                          ),
-                                  width: isActive ? 1.5 : 1,
-                                ),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 14, vertical: 10),
-                                child: Row(
-                                  children: [
-                                    // Pilihan radio & info layout aktif
-                                    Expanded(
-                                      child: InkWell(
-                                        borderRadius: BorderRadius.circular(12),
-                                        onTap: isActive
-                                            ? null
-                                            : () => _setActive(dash.id),
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 6),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                            child: Row(
+                              children: [
+                                // Pilihan radio & info layout aktif
+                                Expanded(
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(12),
+                                    onTap: isActive
+                                        ? null
+                                        : () => _setActive(dash.id),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 6,
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
                                             children: [
-                                              Row(
-                                                children: [
-                                                  Icon(
-                                                    isActive
-                                                        ? Icons.radio_button_checked
-                                                        : Icons.radio_button_off,
-                                                    size: 20,
-                                                    color: isActive
-                                                        ? colors.primary
-                                                        : colors.onSurface
-                                                            .withValues(
-                                                                alpha: 0.4),
-                                                  ),
-                                                  const SizedBox(width: 10),
-                                                  Expanded(
-                                                    child: Text(
-                                                      dash.name,
-                                                      maxLines: 1,
-                                                      overflow: TextOverflow
-                                                          .ellipsis,
-                                                      style: theme
-                                                          .textTheme
-                                                          .titleSmall
-                                                          ?.copyWith(
+                                              Icon(
+                                                isActive
+                                                    ? Icons.radio_button_checked
+                                                    : Icons.radio_button_off,
+                                                size: 20,
+                                                color: isActive
+                                                    ? colors.primary
+                                                    : colors.onSurface
+                                                          .withValues(
+                                                            alpha: 0.4,
+                                                          ),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Expanded(
+                                                child: Text(
+                                                  dash.name,
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: theme
+                                                      .textTheme
+                                                      .titleSmall
+                                                      ?.copyWith(
                                                         fontWeight:
                                                             FontWeight.bold,
                                                       ),
-                                                    ),
-                                                  ),
-                                                  if (isActive) ...[
-                                                    const SizedBox(width: 6),
-                                                    Container(
-                                                      padding: const EdgeInsets
-                                                          .symmetric(
+                                                ),
+                                              ),
+                                              if (isActive) ...[
+                                                const SizedBox(width: 6),
+                                                Container(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
                                                         horizontal: 8,
                                                         vertical: 2,
                                                       ),
-                                                      decoration: BoxDecoration(
-                                                        color: colors.primary
-                                                            .withValues(
-                                                                alpha: 0.12),
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                                8),
-                                                      ),
-                                                      child: Text(
-                                                        'AKTIF',
-                                                        style: TextStyle(
-                                                          fontSize: 10,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          color: colors.primary,
+                                                  decoration: BoxDecoration(
+                                                    color: colors.primary
+                                                        .withValues(
+                                                          alpha: 0.12,
                                                         ),
-                                                      ),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          8,
+                                                        ),
+                                                  ),
+                                                  child: Text(
+                                                    'AKTIF',
+                                                    style: TextStyle(
+                                                      fontSize: 10,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: colors.primary,
                                                     ),
-                                                  ],
-                                                ],
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                '${dash.widgets.length} widget • ${dash.isPublic ? "Publik" : "Pribadi"}',
-                                                style: TextStyle(
-                                                  fontSize: 11,
-                                                  color: colors.onSurface
-                                                      .withValues(alpha: 0.55),
+                                                  ),
                                                 ),
-                                              ),
+                                              ],
                                             ],
                                           ),
-                                        ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            '${dash.widgets.length} widget • ${dash.isPublic ? "Publik" : "Pribadi"}',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: colors.onSurface
+                                                  .withValues(alpha: 0.55),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
-                                    if (isDeleting)
-                                      const Padding(
-                                        padding: EdgeInsets.symmetric(
-                                            horizontal: 8),
-                                        child: SizedBox(
-                                          width: 18,
-                                          height: 18,
-                                          child: CircularProgressIndicator(
-                                              strokeWidth: 2),
-                                        ),
-                                      )
-                                    else ...[
-                                      FilledButton.tonalIcon(
-                                        style: FilledButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 10, vertical: 6),
-                                          visualDensity: VisualDensity.compact,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                          ),
-                                        ),
-                                        onPressed: () => _openEditor(dash),
-                                        icon: const Icon(Icons.edit_outlined,
-                                            size: 16),
-                                        label: const Text('Edit',
-                                            style: TextStyle(fontSize: 12)),
-                                      ),
-                                      IconButton(
-                                        tooltip: dash.isPublic
-                                            ? 'Jadikan Pribadi'
-                                            : 'Publikasikan Layout',
-                                        icon: Icon(
-                                          dash.isPublic
-                                              ? Icons.public_rounded
-                                              : Icons.public_outlined,
-                                          size: 19,
-                                        ),
-                                        color: dash.isPublic
-                                            ? colors.primary
-                                            : null,
-                                        onPressed: () async {
-                                          final toggled = DashboardModel(
-                                            id: dash.id,
-                                            userId: dash.userId,
-                                            name: dash.name,
-                                            isPublic: !dash.isPublic,
-                                            widgets: dash.widgets,
-                                            deviceIds: dash.deviceIds,
-                                          );
-                                          try {
-                                            await widget.iotService
-                                                .updateDashboard(toggled);
-                                            await _load();
-                                            widget.onChanged?.call();
-                                          } catch (e) {
-                                            if (mounted) {
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
-                                                SnackBar(
-                                                    content: Text(
-                                                        'Gagal memperbarui: $e')),
-                                              );
-                                            }
-                                          }
-                                        },
-                                      ),
-                                      IconButton(
-                                        tooltip: 'Hapus Layout',
-                                        icon: const Icon(
-                                            Icons.delete_outline_rounded,
-                                            size: 19),
-                                        color: colors.error,
-                                        onPressed: () => _delete(dash),
-                                      ),
-                                    ],
-                                  ],
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
-                        ),
+                                const SizedBox(width: 8),
+                                if (isDeleting)
+                                  const Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                    ),
+                                    child: SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                  )
+                                else ...[
+                                  FilledButton.tonalIcon(
+                                    style: FilledButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 6,
+                                      ),
+                                      visualDensity: VisualDensity.compact,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                    onPressed: () => _openEditor(dash),
+                                    icon: const Icon(
+                                      Icons.edit_outlined,
+                                      size: 16,
+                                    ),
+                                    label: const Text(
+                                      'Edit',
+                                      style: TextStyle(fontSize: 12),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    tooltip: dash.isPublic
+                                        ? 'Jadikan Pribadi'
+                                        : 'Publikasikan Layout',
+                                    icon: Icon(
+                                      dash.isPublic
+                                          ? Icons.public_rounded
+                                          : Icons.public_outlined,
+                                      size: 19,
+                                    ),
+                                    color: dash.isPublic
+                                        ? colors.primary
+                                        : null,
+                                    onPressed: () async {
+                                      final toggled = DashboardModel(
+                                        id: dash.id,
+                                        userId: dash.userId,
+                                        name: dash.name,
+                                        isPublic: !dash.isPublic,
+                                        widgets: dash.widgets,
+                                        deviceIds: dash.deviceIds,
+                                      );
+                                      try {
+                                        await widget.iotService.updateDashboard(
+                                          toggled,
+                                        );
+                                        await _load();
+                                        widget.onChanged?.call();
+                                      } catch (e) {
+                                        if (mounted) {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    'Gagal memperbarui: $e',
+                                                  ),
+                                                ),
+                                              );
+                                        }
+                                      }
+                                    },
+                                  ),
+                                  IconButton(
+                                    tooltip: 'Hapus Layout',
+                                    icon: const Icon(
+                                      Icons.delete_outline_rounded,
+                                      size: 19,
+                                    ),
+                                    color: colors.error,
+                                    onPressed: () => _delete(dash),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
             ),
           ],
         );

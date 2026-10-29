@@ -5,11 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'src/data/iot_service.dart';
+import 'src/screens/automation_list_screen.dart';
 import 'src/screens/dashboard_editor_screen.dart';
 import 'src/screens/device_list_screen.dart';
 import 'src/screens/explore_dashboards_screen.dart';
-import 'src/screens/automation_list_screen.dart';
-import 'src/screens/automation_editor_screen.dart';
 import 'src/screens/iot_dashboard_screen.dart';
 import 'src/screens/kelola_layouts.dart';
 
@@ -45,44 +44,41 @@ class IotModule implements AppModule {
 
   @override
   List<RouteBase> get routes => [
+    GoRoute(
+      path: '/iot',
+      name: 'iot',
+      builder: (context, state) =>
+          IotDashboardScreen(service: _effectiveService),
+      routes: [
         GoRoute(
-          path: '/iot',
-          name: 'iot',
+          path: 'edit',
+          name: 'iot-edit',
           builder: (context, state) =>
-              IotDashboardScreen(service: _effectiveService),
-          routes: [
-            GoRoute(
-              path: 'edit',
-              name: 'iot-edit',
-              builder: (context, state) => DashboardEditorScreen(
-                iotService: _effectiveService,
-              ),
-            ),
-            GoRoute(
-              path: 'explore',
-              name: 'iot-explore',
-              builder: (context, state) => ExploreDashboardsScreen(
-                iotService: _effectiveService,
-              ),
-            ),
-            GoRoute(
-              path: 'devices',
-              name: 'iot-devices',
-              builder: (context, state) => Scaffold(
-                appBar: AppBar(title: const Text('Daftar Perangkat Terhubung')),
-                body: DeviceListScreen(service: _effectiveService),
-              ),
-            ),
-            GoRoute(
-              path: 'rules',
-              name: 'iot-rules',
-              builder: (context, state) => AutomationListScreen(
-                iotService: _effectiveService,
-              ),
-            ),
-          ],
+              DashboardEditorScreen(iotService: _effectiveService),
         ),
-      ];
+        GoRoute(
+          path: 'explore',
+          name: 'iot-explore',
+          builder: (context, state) =>
+              ExploreDashboardsScreen(iotService: _effectiveService),
+        ),
+        GoRoute(
+          path: 'devices',
+          name: 'iot-devices',
+          builder: (context, state) => Scaffold(
+            appBar: AppBar(title: const Text('Daftar Perangkat Terhubung')),
+            body: DeviceListScreen(service: _effectiveService),
+          ),
+        ),
+        GoRoute(
+          path: 'rules',
+          name: 'iot-rules',
+          builder: (context, state) =>
+              AutomationListScreen(iotService: _effectiveService),
+        ),
+      ],
+    ),
+  ];
 
   /// Hapus kartu ringkasan pembuka dashboard ganda pada menu/beranda
   /// karena tombol "Buka Dashboard" sudah ada di header modul.
@@ -96,36 +92,33 @@ class IotModule implements AppModule {
   /// 4. Daftar Perangkat Terhubung (lihat channel & kontrol langsung per unit)
   @override
   List<MenuEntry> get menuEntries => [
-        MenuEntry(
-          id: 'iot_my_layouts',
-          label: 'Layout Saya',
-          icon: Icons.dashboard_customize_outlined,
-          onOpen: (context) {
-            showManageLayoutsSheet(
-              context: context,
-              service: _effectiveService,
-            );
-          },
-        ),
-        MenuEntry(
-          id: 'iot_explore_layouts',
-          label: 'Jelajahi Layout Publik',
-          icon: Icons.explore_outlined,
-          path: '/iot/explore',
-        ),
-        MenuEntry(
-          id: 'iot_automation_rules',
-          label: 'Aturan Otomasi',
-          icon: Icons.auto_awesome_outlined,
-          path: '/iot/rules',
-        ),
-        MenuEntry(
-          id: 'iot_connected_devices',
-          label: 'Daftar Perangkat Terhubung',
-          icon: Icons.devices_outlined,
-          path: '/iot/devices',
-        ),
-      ];
+    MenuEntry(
+      id: 'iot_my_layouts',
+      label: 'Layout Saya',
+      icon: Icons.dashboard_customize_outlined,
+      onOpen: (context) {
+        showManageLayoutsSheet(context: context, service: _effectiveService);
+      },
+    ),
+    MenuEntry(
+      id: 'iot_explore_layouts',
+      label: 'Jelajahi Layout Publik',
+      icon: Icons.explore_outlined,
+      path: '/iot/explore',
+    ),
+    MenuEntry(
+      id: 'iot_automation_rules',
+      label: 'Aturan Otomasi',
+      icon: Icons.auto_awesome_outlined,
+      path: '/iot/rules',
+    ),
+    MenuEntry(
+      id: 'iot_connected_devices',
+      label: 'Daftar Perangkat Terhubung',
+      icon: Icons.devices_outlined,
+      path: '/iot/devices',
+    ),
+  ];
 
   @override
   Widget get homeScreen => IotDashboardScreen(service: _effectiveService);

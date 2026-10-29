@@ -87,7 +87,10 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
   }
 
   Future<void> _sendCommand(
-      String deviceId, String channelId, dynamic value) async {
+    String deviceId,
+    String channelId,
+    dynamic value,
+  ) async {
     setState(() {
       final idx = _devices.indexWhere((d) => d.id == deviceId);
       if (idx != -1) {
@@ -99,9 +102,9 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
       await _service.sendCommand(deviceId, channelId, value);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal mengirim perintah: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gagal mengirim perintah: $e')));
       }
     }
   }
@@ -189,7 +192,8 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                     if (ch.type == 'boolean' &&
                         (ch.direction == 'output' ||
                             ch.direction == 'bidirectional')) {
-                      final isOn = currentVal == true ||
+                      final isOn =
+                          currentVal == true ||
                           currentVal == 'true' ||
                           currentVal == 'on' ||
                           currentVal == 'ON';
@@ -198,8 +202,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                         title: Text(ch.name),
                         subtitle: Text('Channel: ${ch.id}'),
                         value: isOn,
-                        onChanged: (val) =>
-                            _sendCommand(dev.id, ch.id, val),
+                        onChanged: (val) => _sendCommand(dev.id, ch.id, val),
                       );
                     }
 

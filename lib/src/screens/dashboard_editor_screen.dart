@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../data/iot_service.dart';
 import '../data/models/iot_models.dart';
 import 'iot_dashboard_screen.dart';
@@ -154,9 +155,8 @@ class _DashboardEditorScreenState extends State<DashboardEditorScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isSaving = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal menyimpan: $e')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Gagal menyimpan: $e')));
       }
     }
   }
@@ -192,9 +192,11 @@ class _DashboardEditorScreenState extends State<DashboardEditorScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.initialDashboard != null
-            ? 'Edit Dashboard'
-            : 'Atur Dashboard Baru'),
+        title: Text(
+          widget.initialDashboard != null
+              ? 'Edit Dashboard'
+              : 'Atur Dashboard Baru',
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12),
@@ -290,8 +292,12 @@ class _DashboardEditorScreenState extends State<DashboardEditorScreen> {
                     padding: const EdgeInsets.all(32),
                     decoration: BoxDecoration(
                       color: isDark
-                          ? colors.surfaceContainerHighest.withValues(alpha: 0.2)
-                          : colors.surfaceContainerHighest.withValues(alpha: 0.3),
+                          ? colors.surfaceContainerHighest.withValues(
+                              alpha: 0.2,
+                            )
+                          : colors.surfaceContainerHighest.withValues(
+                              alpha: 0.3,
+                            ),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: colors.outline.withValues(alpha: 0.15),
@@ -399,6 +405,8 @@ class _DashboardEditorScreenState extends State<DashboardEditorScreen> {
         return Icons.speed_rounded;
       case 'button':
         return Icons.touch_app_rounded;
+      case 'hold_button':
+        return Icons.touch_app_rounded;
       default:
         return Icons.analytics_outlined;
     }
@@ -431,7 +439,8 @@ class _AddWidgetModalState extends State<_AddWidgetModal> {
             id: 'default',
             name: 'Default',
             direction: 'input',
-            type: 'boolean');
+            type: 'boolean',
+          );
     _autoConfigure();
   }
 
@@ -441,19 +450,104 @@ class _AddWidgetModalState extends State<_AddWidgetModal> {
     super.dispose();
   }
 
+  List<DropdownMenuItem<String>> _getAvailableWidgetItems(DeviceChannel ch) {
+    final items = <DropdownMenuItem<String>>[];
+    final isInput = ch.direction == 'input';
+    final isOutput =
+        ch.direction == 'output' || ch.direction == 'bidirectional';
+    final isBool = ch.type == 'boolean';
+    final isNum = ch.type == 'number';
+
+    if (isInput) {
+      // Channel input: HANYA untuk menampilkan data sensor (read-only)
+      if (isNum) {
+        items.add(
+          const DropdownMenuItem(
+            value: 'gauge',
+            child: Text('Meteran Melingkar (Gauge)'),
+          ),
+        );
+        items.add(
+          const DropdownMenuItem(
+            value: 'value_card',
+            child: Text('Kartu Angka (Value Card)'),
+          ),
+        );
+      } else {
+        items.add(
+          const DropdownMenuItem(
+            value: 'value_card',
+            child: Text('Kartu Nilai (Value Card)'),
+          ),
+        );
+      }
+    } else if (isOutput) {
+      // Channel output/bidirectional: kontrol aksi
+      if (isBool) {
+        items.add(
+          const DropdownMenuItem(
+            value: 'toggle',
+            child: Text('Saklar (Toggle)'),
+          ),
+        );
+        items.add(
+          const DropdownMenuItem(
+            value: 'button',
+            child: Text('Tombol Pulsa (Push Button)'),
+          ),
+        );
+        items.add(
+          const DropdownMenuItem(
+            value: 'hold_button',
+            child: Text('Tombol Saklar (Push Switch)'),
+          ),
+        );
+      } else if (isNum) {
+        items.add(
+          const DropdownMenuItem(
+            value: 'slider',
+            child: Text('Pengatur Nilai (Slider)'),
+          ),
+        );
+        if (ch.direction == 'bidirectional') {
+          items.add(
+            const DropdownMenuItem(
+              value: 'gauge',
+              child: Text('Meteran Melingkar (Gauge)'),
+            ),
+          );
+          items.add(
+            const DropdownMenuItem(
+              value: 'value_card',
+              child: Text('Kartu Angka (Value Card)'),
+            ),
+          );
+        }
+      } else {
+        items.add(
+          const DropdownMenuItem(
+            value: 'button',
+            child: Text('Tombol Aksi (Push Button)'),
+          ),
+        );
+        items.add(
+          const DropdownMenuItem(
+            value: 'value_card',
+            child: Text('Kartu Teks (Value Card)'),
+          ),
+        );
+      }
+    }
+    return items;
+  }
+
   void _autoConfigure() {
     _titleController.text = _selectedChannel.name;
-    if (_selectedChannel.type == 'boolean') {
-      _selectedWidgetType = 'toggle';
-    } else if (_selectedChannel.type == 'number') {
-      if (_selectedChannel.direction == 'output' ||
-          _selectedChannel.direction == 'bidirectional') {
-        _selectedWidgetType = 'slider';
-      } else {
-        _selectedWidgetType = 'gauge';
-      }
-    } else {
-      _selectedWidgetType = 'value_card';
+    final available = _getAvailableWidgetItems(_selectedChannel);
+    if (!available.any((item) => item.value == _selectedWidgetType)) {
+      _selectedWidgetType = available.isNotEmpty
+          ? available.first.value!
+          : 'value_card';
     }
   }
 
@@ -480,15 +574,16 @@ class _AddWidgetModalState extends State<_AddWidgetModal> {
                   shape: BoxShape.circle,
                   color: colors.primary.withValues(alpha: 0.12),
                 ),
-                child: Icon(Icons.add_to_photos_rounded,
-                    color: colors.primary, size: 20),
+                child: Icon(
+                  Icons.add_to_photos_rounded,
+                  color: colors.primary,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 10),
               Text(
                 'Tambah Widget ke Kanvas',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
+                style: Theme.of(context).textTheme.titleMedium
                     ?.copyWith(fontWeight: FontWeight.bold),
               ),
             ],
@@ -498,11 +593,12 @@ class _AddWidgetModalState extends State<_AddWidgetModal> {
           // 1. Pilih Perangkat
           DropdownButtonFormField<IotDevice>(
             isExpanded: true,
-            value: _selectedDevice,
+            initialValue: _selectedDevice,
             decoration: InputDecoration(
               labelText: 'Pilih Perangkat',
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
             ),
             items: widget.devices.map((d) {
               return DropdownMenuItem(
@@ -523,7 +619,8 @@ class _AddWidgetModalState extends State<_AddWidgetModal> {
                           id: 'default',
                           name: 'Default',
                           direction: 'input',
-                          type: 'boolean');
+                          type: 'boolean',
+                        );
                   _autoConfigure();
                 });
               }
@@ -534,11 +631,12 @@ class _AddWidgetModalState extends State<_AddWidgetModal> {
           // 2. Pilih Channel
           DropdownButtonFormField<DeviceChannel>(
             isExpanded: true,
-            value: _selectedChannel,
+            initialValue: _selectedChannel,
             decoration: InputDecoration(
               labelText: 'Pilih Channel / Topik',
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
             ),
             items: _selectedDevice.channels.map((ch) {
               return DropdownMenuItem(
@@ -561,23 +659,33 @@ class _AddWidgetModalState extends State<_AddWidgetModal> {
           const SizedBox(height: 14),
 
           // 3. Tipe Widget
-          DropdownButtonFormField<String>(
-            isExpanded: true,
-            value: _selectedWidgetType,
-            decoration: InputDecoration(
-              labelText: 'Tipe Tampilan Widget',
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-            ),
-            items: const [
-              DropdownMenuItem(value: 'toggle', child: Text('Saklar (Toggle)')),
-              DropdownMenuItem(value: 'slider', child: Text('Pengatur Nilai (Slider)')),
-              DropdownMenuItem(value: 'gauge', child: Text('Meteran Melingkar (Gauge)')),
-              DropdownMenuItem(value: 'value_card', child: Text('Kartu Angka (Value Card)')),
-              DropdownMenuItem(value: 'button', child: Text('Tombol Pulsa (Push Button)')),
-            ],
-            onChanged: (val) {
-              if (val != null) setState(() => _selectedWidgetType = val);
+          Builder(
+            builder: (context) {
+              final availableWidgets = _getAvailableWidgetItems(
+                _selectedChannel,
+              );
+              final currentValue =
+                  availableWidgets.any(
+                    (item) => item.value == _selectedWidgetType,
+                  )
+                  ? _selectedWidgetType
+                  : (availableWidgets.isNotEmpty
+                        ? availableWidgets.first.value
+                        : null);
+              return DropdownButtonFormField<String>(
+                isExpanded: true,
+                initialValue: currentValue,
+                decoration: InputDecoration(
+                  labelText: 'Tipe Tampilan Widget',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                items: availableWidgets,
+                onChanged: (val) {
+                  if (val != null) setState(() => _selectedWidgetType = val);
+                },
+              );
             },
           ),
           const SizedBox(height: 14),
@@ -587,8 +695,9 @@ class _AddWidgetModalState extends State<_AddWidgetModal> {
             controller: _titleController,
             decoration: InputDecoration(
               labelText: 'Label Judul Widget',
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
             ),
           ),
           const SizedBox(height: 20),

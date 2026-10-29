@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../data/iot_service.dart';
 import '../data/models/iot_models.dart';
 
@@ -44,10 +45,12 @@ class _AutomationEditorScreenState extends State<AutomationEditorScreen> {
     final r = widget.initialRule;
     _nameController = TextEditingController(text: r?.name ?? '');
     _cronController = TextEditingController(text: r?.triggerCron ?? '23:00');
-    _triggerValController =
-        TextEditingController(text: r?.triggerValue ?? 'true');
-    _actionValController =
-        TextEditingController(text: r?.actionValue ?? 'false');
+    _triggerValController = TextEditingController(
+      text: r?.triggerValue ?? 'true',
+    );
+    _actionValController = TextEditingController(
+      text: r?.actionValue ?? 'false',
+    );
 
     if (r != null) {
       _triggerType = r.triggerType;
@@ -99,10 +102,7 @@ class _AutomationEditorScreenState extends State<AutomationEditorScreen> {
 
   Future<void> _pickTime() async {
     final now = TimeOfDay.now();
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: now,
-    );
+    final picked = await showTimePicker(context: context, initialTime: now);
     if (picked != null) {
       final hh = picked.hour.toString().padLeft(2, '0');
       final mm = picked.minute.toString().padLeft(2, '0');
@@ -140,16 +140,19 @@ class _AutomationEditorScreenState extends State<AutomationEditorScreen> {
         name: _nameController.text.trim(),
         enabled: widget.initialRule?.enabled ?? true,
         triggerType: _triggerType,
-        triggerDeviceId:
-            _triggerType == 'state' ? _selectedTriggerDevice : null,
-        triggerChannelId:
-            _triggerType == 'state' ? _selectedTriggerChannel : null,
+        triggerDeviceId: _triggerType == 'state'
+            ? _selectedTriggerDevice
+            : null,
+        triggerChannelId: _triggerType == 'state'
+            ? _selectedTriggerChannel
+            : null,
         triggerOperator: _triggerType == 'state' ? _selectedOperator : null,
         triggerValue: _triggerType == 'state'
             ? _triggerValController.text.trim()
             : null,
-        triggerCron:
-            _triggerType == 'schedule' ? _cronController.text.trim() : null,
+        triggerCron: _triggerType == 'schedule'
+            ? _cronController.text.trim()
+            : null,
         actionDeviceId: _selectedActionDevice!,
         actionChannelId: _selectedActionChannel!,
         actionValue: _actionValController.text.trim(),
@@ -164,17 +167,21 @@ class _AutomationEditorScreenState extends State<AutomationEditorScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(isEdit
-              ? 'Aturan berhasil diperbarui'
-              : 'Aturan berhasil dibuat'),
+          content: Text(
+            isEdit ? 'Aturan berhasil diperbarui' : 'Aturan berhasil dibuat',
+          ),
         ),
       );
       Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSaving = false);
+      final msg = e.toString().replaceFirst('Exception: ', '');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal menyimpan aturan: $e')),
+        SnackBar(
+          content: Text(msg),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
       );
     }
   }
@@ -227,11 +234,15 @@ class _AutomationEditorScreenState extends State<AutomationEditorScreen> {
                   // Bagian JIKA (TRIGGER)
                   Card(
                     elevation: 0,
-                    color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.4),
+                    color: theme.colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.4,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                       side: BorderSide(
-                        color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+                        color: theme.colorScheme.outlineVariant.withValues(
+                          alpha: 0.5,
+                        ),
                       ),
                     ),
                     child: Padding(
@@ -243,7 +254,9 @@ class _AutomationEditorScreenState extends State<AutomationEditorScreen> {
                             children: [
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 4),
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
                                 decoration: BoxDecoration(
                                   color: theme.colorScheme.primary,
                                   borderRadius: BorderRadius.circular(6),
@@ -297,12 +310,13 @@ class _AutomationEditorScreenState extends State<AutomationEditorScreen> {
                                 setState(() {
                                   _selectedTriggerDevice = devId;
                                   final dev = _devices.firstWhere(
-                                      (d) => d.id == devId,
-                                      orElse: () => _devices.first);
+                                    (d) => d.id == devId,
+                                    orElse: () => _devices.first,
+                                  );
                                   _selectedTriggerChannel =
                                       dev.channels.isNotEmpty
-                                          ? dev.channels.first.id
-                                          : null;
+                                      ? dev.channels.first.id
+                                      : null;
                                 });
                               },
                             ),
@@ -320,7 +334,7 @@ class _AutomationEditorScreenState extends State<AutomationEditorScreen> {
                                 SizedBox(
                                   width: 100,
                                   child: DropdownButtonFormField<String>(
-                                    value: _selectedOperator,
+                                    initialValue: _selectedOperator,
                                     decoration: const InputDecoration(
                                       labelText: 'Operator',
                                       border: OutlineInputBorder(),
@@ -349,8 +363,8 @@ class _AutomationEditorScreenState extends State<AutomationEditorScreen> {
                                     ),
                                     validator: (v) =>
                                         (v == null || v.trim().isEmpty)
-                                            ? 'Wajib diisi'
-                                            : null,
+                                        ? 'Wajib diisi'
+                                        : null,
                                   ),
                                 ),
                               ],
@@ -368,8 +382,8 @@ class _AutomationEditorScreenState extends State<AutomationEditorScreen> {
                                     ),
                                     validator: (v) =>
                                         (v == null || v.trim().isEmpty)
-                                            ? 'Jadwal wajib diisi'
-                                            : null,
+                                        ? 'Jadwal wajib diisi'
+                                        : null,
                                   ),
                                 ),
                                 const SizedBox(width: 8),
@@ -391,11 +405,15 @@ class _AutomationEditorScreenState extends State<AutomationEditorScreen> {
                   // Bagian MAKA (ACTION)
                   Card(
                     elevation: 0,
-                    color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.4),
+                    color: theme.colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.4,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                       side: BorderSide(
-                        color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+                        color: theme.colorScheme.outlineVariant.withValues(
+                          alpha: 0.5,
+                        ),
                       ),
                     ),
                     child: Padding(
@@ -407,7 +425,9 @@ class _AutomationEditorScreenState extends State<AutomationEditorScreen> {
                             children: [
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 4),
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
                                 decoration: BoxDecoration(
                                   color: theme.colorScheme.tertiary,
                                   borderRadius: BorderRadius.circular(6),
@@ -439,12 +459,12 @@ class _AutomationEditorScreenState extends State<AutomationEditorScreen> {
                               setState(() {
                                 _selectedActionDevice = devId;
                                 final dev = _devices.firstWhere(
-                                    (d) => d.id == devId,
-                                    orElse: () => _devices.first);
-                                _selectedActionChannel =
-                                    dev.channels.isNotEmpty
-                                        ? dev.channels.first.id
-                                        : null;
+                                  (d) => d.id == devId,
+                                  orElse: () => _devices.first,
+                                );
+                                _selectedActionChannel = dev.channels.isNotEmpty
+                                    ? dev.channels.first.id
+                                    : null;
                               });
                             },
                           ),
@@ -510,11 +530,14 @@ class _AutomationEditorScreenState extends State<AutomationEditorScreen> {
     required ValueChanged<String?> onChanged,
   }) {
     if (_devices.isEmpty) {
-      return Text('Belum ada perangkat terdaftar.',
-          style: TextStyle(color: Theme.of(context).colorScheme.error));
+      return Text(
+        'Belum ada perangkat terdaftar.',
+        style: TextStyle(color: Theme.of(context).colorScheme.error),
+      );
     }
     return DropdownButtonFormField<String>(
-      value: _devices.any((d) => d.id == selectedId) ? selectedId : null,
+      isExpanded: true,
+      initialValue: _devices.any((d) => d.id == selectedId) ? selectedId : null,
       decoration: InputDecoration(
         labelText: label,
         border: const OutlineInputBorder(),
@@ -522,7 +545,7 @@ class _AutomationEditorScreenState extends State<AutomationEditorScreen> {
       items: _devices.map((d) {
         return DropdownMenuItem(
           value: d.id,
-          child: Text('${d.name} (${d.id})'),
+          child: Text('${d.name} (${d.id})', overflow: TextOverflow.ellipsis),
         );
       }).toList(),
       onChanged: onChanged,
@@ -542,7 +565,8 @@ class _AutomationEditorScreenState extends State<AutomationEditorScreen> {
     }
 
     return DropdownButtonFormField<String>(
-      value: channels.any((c) => c.id == selectedId) ? selectedId : null,
+      isExpanded: true,
+      initialValue: channels.any((c) => c.id == selectedId) ? selectedId : null,
       decoration: const InputDecoration(
         labelText: 'Pilih Channel',
         border: OutlineInputBorder(),
@@ -550,7 +574,10 @@ class _AutomationEditorScreenState extends State<AutomationEditorScreen> {
       items: channels.map((c) {
         return DropdownMenuItem(
           value: c.id,
-          child: Text('${c.name} [${c.id}] (${c.type})'),
+          child: Text(
+            '${c.name} [${c.id}] (${c.type})',
+            overflow: TextOverflow.ellipsis,
+          ),
         );
       }).toList(),
       onChanged: onChanged,

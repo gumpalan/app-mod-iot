@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+
 import '../data/models/iot_models.dart';
 
 typedef CommandCallback = void Function(
-    String deviceId, String channelId, dynamic value);
+  String deviceId,
+  String channelId,
+  dynamic value,
+);
 
 /// Widget kartu saklar toggle blynk-style.
 class IotToggleWidget extends StatelessWidget {
@@ -23,7 +27,8 @@ class IotToggleWidget extends StatelessWidget {
     final colors = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
 
-    final bool isOn = currentState == true ||
+    final bool isOn =
+        currentState == true ||
         currentState == 'true' ||
         currentState == 'on' ||
         currentState == 1 ||
@@ -37,8 +42,8 @@ class IotToggleWidget extends StatelessWidget {
           color: isOn
               ? colors.primary.withValues(alpha: 0.5)
               : (isDark
-                  ? colors.outline.withValues(alpha: 0.2)
-                  : colors.outlineVariant.withValues(alpha: 0.6)),
+                    ? colors.outline.withValues(alpha: 0.2)
+                    : colors.outlineVariant.withValues(alpha: 0.6)),
           width: isOn ? 1.5 : 1,
         ),
       ),
@@ -177,8 +182,10 @@ class _IotSliderWidgetState extends State<IotSliderWidget> {
                   ),
                 ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: colors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
@@ -217,8 +224,11 @@ class _IotSliderWidgetState extends State<IotSliderWidget> {
                 },
                 onChangeEnd: (val) {
                   _dragValue = null;
-                  widget.onCommand(widget.config.deviceId,
-                      widget.config.channelId, val.round());
+                  widget.onCommand(
+                    widget.config.deviceId,
+                    widget.config.channelId,
+                    val.round(),
+                  );
                 },
               ),
             ),
@@ -387,11 +397,7 @@ class IotValueCardWidget extends StatelessWidget {
                     ),
                   ),
                 ),
-                Icon(
-                  Icons.show_chart_rounded,
-                  size: 20,
-                  color: colors.primary,
-                ),
+                Icon(Icons.show_chart_rounded, size: 20, color: colors.primary),
               ],
             ),
             const SizedBox(height: 12),
@@ -499,6 +505,133 @@ class IotButtonWidget extends StatelessWidget {
                     SizedBox(width: 8),
                     Text('Jalankan Perintah'),
                   ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Widget tombol menahan / latching push button (gabungan switch dan push button).
+class IotHoldButtonWidget extends StatelessWidget {
+  final DashboardWidgetConfig config;
+  final dynamic currentState;
+  final CommandCallback onCommand;
+
+  const IotHoldButtonWidget({
+    super.key,
+    required this.config,
+    required this.currentState,
+    required this.onCommand,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    final bool isOn =
+        currentState == true ||
+        currentState == 'true' ||
+        currentState == 'on' ||
+        currentState == 1 ||
+        currentState == 'ON';
+
+    return Card(
+      elevation: isDark ? 0 : 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: isOn
+              ? colors.primary.withValues(alpha: 0.6)
+              : (isDark
+                    ? colors.outline.withValues(alpha: 0.2)
+                    : colors.outlineVariant.withValues(alpha: 0.6)),
+          width: isOn ? 1.5 : 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        config.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${config.deviceId} • ${isOn ? "AKTIF" : "NONAKTIF"}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: isOn
+                              ? colors.primary
+                              : colors.onSurface.withValues(alpha: 0.5),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isOn
+                        ? colors.primary.withValues(alpha: 0.15)
+                        : colors.surfaceContainerHighest.withValues(alpha: 0.5),
+                  ),
+                  child: Icon(
+                    Icons.touch_app_rounded,
+                    size: 20,
+                    color: isOn
+                        ? colors.primary
+                        : colors.onSurface.withValues(alpha: 0.4),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: FilledButton.icon(
+                onPressed: () =>
+                    onCommand(config.deviceId, config.channelId, !isOn),
+                style: FilledButton.styleFrom(
+                  backgroundColor: isOn
+                      ? colors.primary
+                      : colors.primary.withValues(alpha: 0.12),
+                  foregroundColor: isOn ? colors.onPrimary : colors.primary,
+                  elevation: isOn ? 2 : 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                icon: Icon(
+                  isOn
+                      ? Icons.power_settings_new_rounded
+                      : Icons.touch_app_rounded,
+                  size: 20,
+                ),
+                label: Text(
+                  isOn ? 'Matikan Perangkat' : 'Nyalakan Perangkat',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
             ),

@@ -6,10 +6,7 @@ class MockIotServiceRules extends IotService {
   final List<AutomationRule> rules;
   final List<IotDevice> devices;
 
-  MockIotServiceRules({
-    this.rules = const [],
-    this.devices = const [],
-  });
+  MockIotServiceRules({this.rules = const [], this.devices = const []});
 
   @override
   Future<List<AutomationRule>> fetchRules() async => rules;
@@ -54,8 +51,9 @@ void main() {
       expect(decoded.triggerValue, equals('500'));
     });
 
-    testWidgets('AutomationListScreen renders rules list correctly',
-        (tester) async {
+    testWidgets('AutomationListScreen renders rules list correctly', (
+      tester,
+    ) async {
       final mockRule = const AutomationRule(
         id: 'rule-1',
         name: 'Nyalakan Kipas Otomatis',
@@ -73,9 +71,7 @@ void main() {
       final service = MockIotServiceRules(rules: [mockRule]);
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: AutomationListScreen(iotService: service),
-        ),
+        MaterialApp(home: AutomationListScreen(iotService: service)),
       );
 
       await tester.pumpAndSettle();
@@ -86,8 +82,9 @@ void main() {
       expect(find.byType(Switch), findsOneWidget);
     });
 
-    testWidgets('AutomationEditorScreen renders form fields correctly',
-        (tester) async {
+    testWidgets('AutomationEditorScreen renders form fields correctly', (
+      tester,
+    ) async {
       final device = const IotDevice(
         id: 'lampu1',
         name: 'Lampu Teras',
@@ -105,9 +102,7 @@ void main() {
       final service = MockIotServiceRules(devices: [device]);
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: AutomationEditorScreen(iotService: service),
-        ),
+        MaterialApp(home: AutomationEditorScreen(iotService: service)),
       );
 
       await tester.pumpAndSettle();

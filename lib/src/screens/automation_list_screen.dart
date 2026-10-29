@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../data/iot_service.dart';
 import '../data/models/iot_models.dart';
 import 'automation_editor_screen.dart';
@@ -6,10 +7,7 @@ import 'automation_editor_screen.dart';
 class AutomationListScreen extends StatefulWidget {
   final IotService iotService;
 
-  const AutomationListScreen({
-    super.key,
-    required this.iotService,
-  });
+  const AutomationListScreen({super.key, required this.iotService});
 
   @override
   State<AutomationListScreen> createState() => _AutomationListScreenState();
@@ -122,14 +120,13 @@ class _AutomationListScreenState extends State<AutomationListScreen> {
       setState(() {
         _rules.removeWhere((r) => r.id == rule.id);
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Aturan berhasil dihapus')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Aturan berhasil dihapus')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal menghapus aturan: $e')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Gagal menghapus aturan: $e')));
     }
   }
 
@@ -184,13 +181,13 @@ class _AutomationListScreenState extends State<AutomationListScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.error_outline_rounded,
-                  size: 48, color: theme.colorScheme.error),
-              const SizedBox(height: 12),
-              Text(
-                'Terjadi Kesalahan',
-                style: theme.textTheme.titleMedium,
+              Icon(
+                Icons.error_outline_rounded,
+                size: 48,
+                color: theme.colorScheme.error,
               ),
+              const SizedBox(height: 12),
+              Text('Terjadi Kesalahan', style: theme.textTheme.titleMedium),
               const SizedBox(height: 8),
               Text(
                 _error!,
@@ -220,7 +217,9 @@ class _AutomationListScreenState extends State<AutomationListScreen> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer.withOpacity(0.5),
+                  color: theme.colorScheme.primaryContainer.withValues(
+                    alpha: 0.5,
+                  ),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -259,7 +258,7 @@ class _AutomationListScreenState extends State<AutomationListScreen> {
     return ListView.separated(
       padding: const EdgeInsets.all(16).copyWith(bottom: 80),
       itemCount: _rules.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemBuilder: (ctx, index) {
         final rule = _rules[index];
         final isTesting = _testingIds.contains(rule.id);
@@ -269,8 +268,8 @@ class _AutomationListScreenState extends State<AutomationListScreen> {
             borderRadius: BorderRadius.circular(16),
             side: BorderSide(
               color: rule.enabled
-                  ? theme.colorScheme.primary.withOpacity(0.3)
-                  : theme.colorScheme.outlineVariant.withOpacity(0.5),
+                  ? theme.colorScheme.primary.withValues(alpha: 0.3)
+                  : theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
             ),
           ),
           child: Padding(
@@ -284,10 +283,11 @@ class _AutomationListScreenState extends State<AutomationListScreen> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: (rule.enabled
-                                ? theme.colorScheme.primary
-                                : theme.colorScheme.outline)
-                            .withOpacity(0.12),
+                        color:
+                            (rule.enabled
+                                    ? theme.colorScheme.primary
+                                    : theme.colorScheme.outline)
+                                .withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
@@ -312,22 +312,58 @@ class _AutomationListScreenState extends State<AutomationListScreen> {
                             ),
                           ),
                           const SizedBox(height: 4),
-                          Text(
-                            rule.enabled ? 'Aktif' : 'Dinonaktifkan',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: rule.enabled
-                                  ? Colors.green.shade700
-                                  : theme.colorScheme.outline,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 4,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              Text(
+                                rule.enabled ? 'Aktif' : 'Dinonaktifkan',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: rule.enabled
+                                      ? Colors.green.shade700
+                                      : theme.colorScheme.outline,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: rule.isOwner
+                                      ? theme.colorScheme.primaryContainer
+                                            .withValues(alpha: 0.7)
+                                      : theme
+                                            .colorScheme
+                                            .surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  rule.isOwner
+                                      ? 'Milik Saya'
+                                      : 'Aturan Bersama',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: rule.isOwner
+                                        ? theme.colorScheme.onPrimaryContainer
+                                        : theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
                     ),
                     Switch(
                       value: rule.enabled,
-                      onChanged: (val) => _toggleRule(rule, val),
+                      onChanged: rule.isOwner
+                          ? (val) => _toggleRule(rule, val)
+                          : null,
                     ),
                   ],
                 ),
@@ -356,21 +392,35 @@ class _AutomationListScreenState extends State<AutomationListScreen> {
                       label: const Text('Uji Aksi'),
                     ),
                     const SizedBox(width: 8),
-                    IconButton.filledTonal(
-                      onPressed: () => _openEditor(rule),
-                      icon: const Icon(Icons.edit_outlined, size: 18),
-                      tooltip: 'Edit Aturan',
-                    ),
-                    const SizedBox(width: 4),
-                    IconButton.filledTonal(
-                      onPressed: () => _deleteRule(rule),
-                      icon: Icon(
-                        Icons.delete_outline_rounded,
-                        size: 18,
-                        color: theme.colorScheme.error,
+                    if (rule.isOwner) ...[
+                      IconButton.filledTonal(
+                        onPressed: () => _openEditor(rule),
+                        icon: const Icon(Icons.edit_outlined, size: 18),
+                        tooltip: 'Edit Aturan',
                       ),
-                      tooltip: 'Hapus Aturan',
-                    ),
+                      const SizedBox(width: 4),
+                      IconButton.filledTonal(
+                        onPressed: () => _deleteRule(rule),
+                        icon: Icon(
+                          Icons.delete_outline_rounded,
+                          size: 18,
+                          color: theme.colorScheme.error,
+                        ),
+                        tooltip: 'Hapus Aturan',
+                      ),
+                    ] else ...[
+                      Tooltip(
+                        message: 'Hanya pemilik yang dapat mengubah aturan ini',
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Icon(
+                            Icons.lock_outline_rounded,
+                            size: 18,
+                            color: theme.colorScheme.outline,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ],
@@ -408,12 +458,7 @@ class _AutomationListScreenState extends State<AutomationListScreen> {
           ),
         ),
         const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            triggerDesc,
-            style: theme.textTheme.bodyMedium,
-          ),
-        ),
+        Expanded(child: Text(triggerDesc, style: theme.textTheme.bodyMedium)),
       ],
     );
   }

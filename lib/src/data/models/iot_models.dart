@@ -82,7 +82,8 @@ class IotDevice {
   });
 
   factory IotDevice.fromJson(Map<String, dynamic> json) {
-    final chList = (json['channels'] as List<dynamic>?)
+    final chList =
+        (json['channels'] as List<dynamic>?)
             ?.map((e) => DeviceChannel.fromJson(e as Map<String, dynamic>))
             .toList() ??
         [];
@@ -186,19 +187,21 @@ class DashboardModel {
         final decoded = jsonDecode(layoutRaw);
         if (decoded is List) {
           parsedWidgets = decoded
-              .map((w) =>
-                  DashboardWidgetConfig.fromJson(w as Map<String, dynamic>))
+              .map(
+                (w) =>
+                    DashboardWidgetConfig.fromJson(w as Map<String, dynamic>),
+              )
               .toList();
         }
       } catch (_) {}
     } else if (layoutRaw is List) {
       parsedWidgets = layoutRaw
-          .map((w) =>
-              DashboardWidgetConfig.fromJson(w as Map<String, dynamic>))
+          .map((w) => DashboardWidgetConfig.fromJson(w as Map<String, dynamic>))
           .toList();
     }
 
-    final devIds = (json['deviceIds'] as List<dynamic>?)
+    final devIds =
+        (json['deviceIds'] as List<dynamic>?)
             ?.map((e) => e.toString())
             .toList() ??
         [];
@@ -244,6 +247,7 @@ class AutomationRule {
   final String actionValue;
   final int createdAt;
   final int updatedAt;
+  final bool isOwner;
 
   const AutomationRule({
     required this.id,
@@ -261,6 +265,7 @@ class AutomationRule {
     required this.actionValue,
     this.createdAt = 0,
     this.updatedAt = 0,
+    this.isOwner = true,
   });
 
   factory AutomationRule.fromJson(Map<String, dynamic> json) {
@@ -280,6 +285,7 @@ class AutomationRule {
       actionValue: json['actionValue']?.toString() ?? '',
       createdAt: json['createdAt'] as int? ?? 0,
       updatedAt: json['updatedAt'] as int? ?? 0,
+      isOwner: json['isOwner'] as bool? ?? true,
     );
   }
 
@@ -299,6 +305,7 @@ class AutomationRule {
     'actionValue': actionValue,
     'createdAt': createdAt,
     'updatedAt': updatedAt,
+    'isOwner': isOwner,
   };
 
   AutomationRule copyWith({
@@ -317,6 +324,7 @@ class AutomationRule {
     String? actionValue,
     int? createdAt,
     int? updatedAt,
+    bool? isOwner,
   }) {
     return AutomationRule(
       id: id ?? this.id,
@@ -334,6 +342,7 @@ class AutomationRule {
       actionValue: actionValue ?? this.actionValue,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      isOwner: isOwner ?? this.isOwner,
     );
   }
 }

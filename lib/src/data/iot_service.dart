@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:core_api/core_api.dart';
 import 'package:flutter/foundation.dart';
+
 import 'models/iot_models.dart';
 
 /// Service untuk orkestrasi data IoT, dashboard pengguna, dan stream WebSocket real-time.
@@ -29,21 +30,20 @@ class IotService {
     dashboardsChanged.value++;
   }
 
-  IotService({
-    ApiClient? client,
-    String? baseUrl,
-    String? wsUrl,
-  })  : apiClient = client ??
-            ApiClient(
-              baseUrl: baseUrl ?? 'http://127.0.0.1:8080',
-              tokenStorage: SharedPrefsTokenStorage(),
-            ),
-        wsBaseUrl = wsUrl ??
-            (baseUrl != null
-                ? (baseUrl.startsWith('https://')
+  IotService({ApiClient? client, String? baseUrl, String? wsUrl})
+    : apiClient =
+          client ??
+          ApiClient(
+            baseUrl: baseUrl ?? 'http://127.0.0.1:8080',
+            tokenStorage: SharedPrefsTokenStorage(),
+          ),
+      wsBaseUrl =
+          wsUrl ??
+          (baseUrl != null
+              ? (baseUrl.startsWith('https://')
                     ? baseUrl.replaceFirst('https://', 'wss://')
                     : baseUrl.replaceFirst('http://', 'ws://'))
-                : 'ws://127.0.0.1:8080');
+              : 'ws://127.0.0.1:8080');
 
   /// Mengambil daftar seluruh perangkat dan status channel terkini.
   Future<List<IotDevice>> getDevices() async {
@@ -59,16 +59,21 @@ class IotService {
 
   /// Mengirimkan perintah ke channel perangkat.
   Future<void> sendCommand(
-      String deviceId, String channelId, dynamic value) async {
+    String deviceId,
+    String channelId,
+    dynamic value,
+  ) async {
     // Coba kirim via WebSocket bila terhubung untuk latensi instan
     if (_socket != null && _socket!.readyState == WebSocket.open) {
       try {
-        _socket!.add(jsonEncode({
-          'type': 'command',
-          'deviceId': deviceId,
-          'channelId': channelId,
-          'value': value,
-        }));
+        _socket!.add(
+          jsonEncode({
+            'type': 'command',
+            'deviceId': deviceId,
+            'channelId': channelId,
+            'value': value,
+          }),
+        );
         return;
       } catch (_) {}
     }
@@ -76,10 +81,7 @@ class IotService {
     // Fallback ke HTTP REST
     final response = await apiClient.post(
       '/iot/v1/devices/$deviceId/command',
-      body: {
-        'channel': channelId,
-        'value': value,
-      },
+      body: {'channel': channelId, 'value': value},
     );
     if (response.statusCode != 200) {
       throw Exception('Gagal mengirim perintah (${response.statusCode})');
@@ -192,17 +194,30 @@ class IotService {
     throw Exception('Gagal memuat aturan otomasi (${response.statusCode})');
   }
 
+  String _extractErrorMessage(dynamic body, int statusCode, String fallback) {
+    try {
+      final parsed = jsonDecode(body.toString());
+      if (parsed is Map && parsed['error'] != null) {
+        return parsed['error'].toString();
+      }
+    } catch (_) {}
+    return '$fallback ($statusCode)';
+  }
+
   /// Membuat aturan otomasi baru.
   Future<AutomationRule> createRule(AutomationRule rule) async {
-    final response = await apiClient.post(
-      '/iot/v1/rules',
-      body: rule.toJson(),
-    );
+    final response = await apiClient.post('/iot/v1/rules', body: rule.toJson());
     if (response.statusCode == 201) {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       return AutomationRule.fromJson(data);
     }
-    throw Exception('Gagal membuat aturan (${response.statusCode})');
+    throw Exception(
+      _extractErrorMessage(
+        response.body,
+        response.statusCode,
+        'Gagal membuat aturan',
+      ),
+    );
   }
 
   /// Memperbarui aturan otomasi yang sudah ada.
@@ -215,7 +230,13 @@ class IotService {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       return AutomationRule.fromJson(data);
     }
-    throw Exception('Gagal memperbarui aturan (${response.statusCode})');
+    throw Exception(
+      _extractErrorMessage(
+        response.body,
+        response.statusCode,
+        'Gagal memperbarui aturan',
+      ),
+    );
   }
 
   /// Mengubah status aktif/nonaktif aturan otomasi.
@@ -228,14 +249,26 @@ class IotService {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       return data['enabled'] as bool? ?? enabled;
     }
-    throw Exception('Gagal mengubah status aturan (${response.statusCode})');
+    throw Exception(
+      _extractErrorMessage(
+        response.body,
+        response.statusCode,
+        'Gagal mengubah status aturan',
+      ),
+    );
   }
 
   /// Menghapus aturan otomasi.
   Future<void> deleteRule(String id) async {
     final response = await apiClient.delete('/iot/v1/rules/$id');
     if (response.statusCode != 200) {
-      throw Exception('Gagal menghapus aturan (${response.statusCode})');
+      throw Exception(
+        _extractErrorMessage(
+          response.body,
+          response.statusCode,
+          'Gagal menghapus aturan',
+        ),
+      );
     }
   }
 

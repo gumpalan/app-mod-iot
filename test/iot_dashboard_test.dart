@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mod_iot/mod_iot.dart';
@@ -8,10 +7,7 @@ class MockIotService extends IotService {
   final List<DashboardModel> mockDashboards;
   final List<IotDevice> mockDevices;
 
-  MockIotService({
-    this.mockDashboards = const [],
-    this.mockDevices = const [],
-  });
+  MockIotService({this.mockDashboards = const [], this.mockDevices = const []});
 
   @override
   Future<List<DashboardModel>> getDashboards() async => mockDashboards;
@@ -27,7 +23,10 @@ class MockIotService extends IotService {
 
   @override
   Future<void> sendCommand(
-      String deviceId, String channelId, dynamic value) async {}
+    String deviceId,
+    String channelId,
+    dynamic value,
+  ) async {}
 }
 
 void main() {
@@ -62,11 +61,10 @@ void main() {
   });
 
   group('ManageLayoutsSheet Widget Tests', () {
-    testWidgets('ManageLayoutsSheet renders layout list properly',
-        (tester) async {
-      SharedPreferences.setMockInitialValues({
-        kIotActiveDashboardPref: 'd1',
-      });
+    testWidgets('ManageLayoutsSheet renders layout list properly', (
+      tester,
+    ) async {
+      SharedPreferences.setMockInitialValues({kIotActiveDashboardPref: 'd1'});
 
       final mock = MockIotService(
         mockDashboards: [
@@ -82,9 +80,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: ManageLayoutsSheet(iotService: mock),
-          ),
+          home: Scaffold(body: ManageLayoutsSheet(iotService: mock)),
         ),
       );
 
@@ -99,15 +95,12 @@ void main() {
     setUp(() {
       SharedPreferences.setMockInitialValues({});
     });
-    testWidgets('Tampil state kosong jika belum ada dashboard',
-        (tester) async {
+    testWidgets('Tampil state kosong jika belum ada dashboard', (tester) async {
       final mock = MockIotService(mockDashboards: []);
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: IotDashboardScreen(service: mock),
-          ),
+          home: Scaffold(body: IotDashboardScreen(service: mock)),
         ),
       );
 
@@ -117,11 +110,10 @@ void main() {
       expect(find.text('Atur Layout Baru'), findsOneWidget);
     });
 
-    testWidgets('Tampil kanvas widget jika dashboard sudah diatur',
-        (tester) async {
-      SharedPreferences.setMockInitialValues({
-        kIotActiveDashboardPref: 'd1',
-      });
+    testWidgets('Tampil kanvas widget jika dashboard sudah diatur', (
+      tester,
+    ) async {
+      SharedPreferences.setMockInitialValues({kIotActiveDashboardPref: 'd1'});
 
       final mock = MockIotService(
         mockDashboards: [
@@ -185,9 +177,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: IotDashboardScreen(service: mock),
-          ),
+          home: Scaffold(body: IotDashboardScreen(service: mock)),
         ),
       );
 

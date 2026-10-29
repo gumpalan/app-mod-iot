@@ -1,6 +1,8 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../data/iot_service.dart';
 import '../data/models/iot_models.dart';
 import '../widgets/iot_widgets.dart';
@@ -29,7 +31,8 @@ class _IotDashboardScreenState extends State<IotDashboardScreen> {
   List<DashboardModel> _dashboards = [];
   String? _activeDashboardId;
   List<IotDevice> _devices = [];
-  final Map<String, Map<String, dynamic>> _deviceStates = {}; // devID -> chID -> val
+  final Map<String, Map<String, dynamic>> _deviceStates =
+      {}; // devID -> chID -> val
 
   bool _isLoading = true;
 
@@ -67,8 +70,8 @@ class _IotDashboardScreenState extends State<IotDashboardScreen> {
   Future<void> _initDataAndSocket() async {
     setState(() => _isLoading = true);
     final prefs = await SharedPreferences.getInstance();
-    _activeDashboardId = _service.activeLayout.value ??
-        prefs.getString(kIotActiveDashboardPref);
+    _activeDashboardId =
+        _service.activeLayout.value ?? prefs.getString(kIotActiveDashboardPref);
     _service.activeLayout.value = _activeDashboardId;
     await _loadDashboardsAndDevices();
     _connectWebSocket();
@@ -168,13 +171,12 @@ class _IotDashboardScreenState extends State<IotDashboardScreen> {
     }
   }
 
-  DashboardModel? get _activeDashboard =>
-      _activeDashboardId == null
-          ? null
-          : _dashboards
-              .where((d) => d.id == _activeDashboardId)
-              .cast<DashboardModel?>()
-              .firstWhere((_) => true, orElse: () => null);
+  DashboardModel? get _activeDashboard => _activeDashboardId == null
+      ? null
+      : _dashboards
+            .where((d) => d.id == _activeDashboardId)
+            .cast<DashboardModel?>()
+            .firstWhere((_) => true, orElse: () => null);
 
   Future<void> _setActiveDashboard(String? id) async {
     final prefs = await SharedPreferences.getInstance();
@@ -219,7 +221,10 @@ class _IotDashboardScreenState extends State<IotDashboardScreen> {
   }
 
   Future<void> _handleCommand(
-      String deviceId, String channelId, dynamic value) async {
+    String deviceId,
+    String channelId,
+    dynamic value,
+  ) async {
     // Update optimistik lokal untuk latensi instan
     setState(() {
       _deviceStates.putIfAbsent(deviceId, () => {})[channelId] = value;
@@ -229,9 +234,9 @@ class _IotDashboardScreenState extends State<IotDashboardScreen> {
       await _service.sendCommand(deviceId, channelId, value);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal mengirim perintah: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gagal mengirim perintah: $e')));
       }
     }
   }
@@ -380,9 +385,7 @@ class _IotDashboardScreenState extends State<IotDashboardScreen> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 13,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
+                    color: Theme.of(context).colorScheme.onSurface
                         .withValues(alpha: 0.6),
                   ),
                 ),
@@ -414,18 +417,15 @@ class _IotDashboardScreenState extends State<IotDashboardScreen> {
           onCommand: _handleCommand,
         );
       case 'gauge':
-        return IotGaugeWidget(
-          config: w,
-          currentState: currentVal,
-        );
+        return IotGaugeWidget(config: w, currentState: currentVal);
       case 'value_card':
-        return IotValueCardWidget(
+        return IotValueCardWidget(config: w, currentState: currentVal);
+      case 'button':
+        return IotButtonWidget(config: w, onCommand: _handleCommand);
+      case 'hold_button':
+        return IotHoldButtonWidget(
           config: w,
           currentState: currentVal,
-        );
-      case 'button':
-        return IotButtonWidget(
-          config: w,
           onCommand: _handleCommand,
         );
       case 'toggle':
