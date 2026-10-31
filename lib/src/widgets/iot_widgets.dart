@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 import '../data/models/iot_models.dart';
 
@@ -637,6 +638,302 @@ class IotHoldButtonWidget extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// SensorChartWidget — Line chart time-series untuk data sensor numerik
+// ---------------------------------------------------------------------------
+
+/// Widget chart sensor historis berbasis fl_chart.
+/// Hanya ditampilkan di dashboard jika server mengaktifkan HISTORY_MODE sensor/all.
+class SensorChartWidget extends StatelessWidget {
+  final String title;
+  final String? unit;
+  final List<SensorLogEntry> entries;
+  final bool isLoading;
+  final String? error;
+
+  const SensorChartWidget({
+    super.key,
+    required this.title,
+    this.unit,
+    required this.entries,
+    this.isLoading = false,
+    this.error,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: theme.textTheme.titleSmall,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (unit != null)
+                  Text(
+                    unit!,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 160,
+              child: _buildChartBody(context),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChartBody(BuildContext context) {
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (error != null) {
+      return Center(
+        child: Text(error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+      );
+    }
+
+    final numericEntries = entries
+        .where((e) => e.numericValue != null)
+        .toList()
+      ..sort((a, b) => a.recordedAt.compareTo(b.recordedAt));
+
+    if (numericEntries.isEmpty) {
+      return const Center(child: Text('Tidak ada data numerik'));
+    }
+
+    final spots = numericEntries
+        .map((e) => FlSpot(e.recordedAt.toDouble(), e.numericValue!))
+        .toList();
+
+    final minY = spots.map((s) => s.y).reduce((a, b) => a < b ? a : b);
+    final maxY = spots.map((s) => s.y).reduce((a, b) => a > b ? a : b);
+    final yPad = (maxY - minY).abs() < 1 ? 1.0 : (maxY - minY) * 0.15;
+    final primaryColor = Theme.of(context).colorScheme.primary;
+
+    return LineChart(
+      LineChartData(
+        minY: minY - yPad,
+        maxY: maxY + yPad,
+        lineTouchData: const LineTouchData(enabled: true),
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          getDrawingHorizontalLine: (v) => FlLine(
+            color: Colors.grey.withOpacity(0.2),
+            strokeWidth: 1,
+          ),
+        ),
+        titlesData: FlTitlesData(
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 40,
+              getTitlesWidget: (value, meta) => Text(
+                value.toStringAsFixed(1),
+                style: const TextStyle(fontSize: 10),
+              ),
+            ),
+          ),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 22,
+              interval: spots.length > 1
+                  ? (spots.last.x - spots.first.x) / 4
+                  : 1,
+              getTitlesWidget: (value, meta) {
+                final dt = DateTime.fromMillisecondsSinceEpoch(
+                  value.toInt() * 1000,
+                );
+                final h = dt.hour.toString().padLeft(2, '0');
+                final m = dt.minute.toString().padLeft(2, '0');
+                return Text('$h:$m', style: const TextStyle(fontSize: 9));
+              },
+            ),
+          ),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+        ),
+        borderData: FlBorderData(show: false),
+        lineBarsData: [
+          LineChartBarData(
+            spots: spots,
+            isCurved: true,
+            color: primaryColor,
+            barWidth: 2,
+            dotData: FlDotData(
+              show: spots.length <= 50,
+              getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
+                radius: 2.5,
+                color: bar.color ?? Colors.blue,
+                strokeWidth: 0,
+              ),
+            ),
+            belowBarData: BarAreaData(
+              show: true,
+              color: primaryColor.withOpacity(0.08),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// ActuatorLogWidget — Daftar log eksekusi aktuator dengan badge sumber
+// ---------------------------------------------------------------------------
+
+class ActuatorLogWidget extends StatelessWidget {
+  final String title;
+  final List<ActuatorLogEntry> entries;
+  final bool isLoading;
+  final String? error;
+
+  const ActuatorLogWidget({
+    super.key,
+    required this.title,
+    required this.entries,
+    this.isLoading = false,
+    this.error,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: theme.textTheme.titleSmall),
+            const SizedBox(height: 8),
+            _buildBody(context),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBody(BuildContext context) {
+    if (isLoading) {
+      return const Center(heightFactor: 3, child: CircularProgressIndicator());
+    }
+    if (error != null) {
+      return Center(
+        heightFactor: 3,
+        child: Text(error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+      );
+    }
+    if (entries.isEmpty) {
+      return const Center(heightFactor: 3, child: Text('Belum ada aktivitas'));
+    }
+
+    final shown = entries.length > 30 ? entries.sublist(0, 30) : entries;
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: shown.length,
+      separatorBuilder: (_, __) => const Divider(height: 1),
+      itemBuilder: (context, i) => _LogTile(entry: shown[i]),
+    );
+  }
+}
+
+class _LogTile extends StatelessWidget {
+  final ActuatorLogEntry entry;
+  const _LogTile({required this.entry});
+
+  Color _badgeColor(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    switch (entry.source) {
+      case 'app':
+        return cs.primary;
+      case 'automation':
+        return Colors.orange;
+      case 'schedule':
+        return Colors.teal;
+      case 'device':
+        return Colors.grey;
+      default:
+        return cs.secondary;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dt = entry.dateTime.toLocal();
+    final timeStr =
+        '${dt.day.toString().padLeft(2, '0')}/'
+        '${dt.month.toString().padLeft(2, '0')} '
+        '${dt.hour.toString().padLeft(2, '0')}:'
+        '${dt.minute.toString().padLeft(2, '0')}';
+
+    final actorDisplay = entry.actorName ?? entry.actorId ?? '-';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: _badgeColor(context).withOpacity(0.15),
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: _badgeColor(context), width: 0.8),
+            ),
+            child: Text(
+              entry.sourceLabel,
+              style: TextStyle(
+                fontSize: 10,
+                color: _badgeColor(context),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${entry.channelId} = ${entry.value}',
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                ),
+                Text(
+                  '$actorDisplay  •  $timeStr',
+                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -323,6 +323,86 @@ class IotService {
     });
   }
 
+  // -------------------------------------------------------------------------
+  // History API
+  // -------------------------------------------------------------------------
+
+  /// Mengambil kemampuan history yang diaktifkan server.
+  /// Jika endpoint tidak tersedia (server lama), kembalikan HistoryCapabilities.none().
+  Future<HistoryCapabilities> getHistoryCapabilities() async {
+    try {
+      final response = await apiClient.get('/iot/v1/history/capabilities');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        return HistoryCapabilities.fromJson(data);
+      }
+    } catch (_) {}
+    return HistoryCapabilities.none();
+  }
+
+  /// Mengambil log sensor untuk device tertentu.
+  /// [channelId] opsional — kosong berarti semua channel.
+  /// [from] dan [to] adalah unix timestamp detik; jika null, server pakai default (24 jam terakhir).
+  /// [limit] maksimum jumlah entri (default server: 200, max: 1000).
+  Future<List<SensorLogEntry>> getSensorHistory(
+    String deviceId, {
+    String? channelId,
+    int? from,
+    int? to,
+    int? limit,
+  }) async {
+    final params = <String, String>{};
+    if (channelId != null && channelId.isNotEmpty) params['channel'] = channelId;
+    if (from != null) params['from'] = from.toString();
+    if (to != null) params['to'] = to.toString();
+    if (limit != null) params['limit'] = limit.toString();
+
+    final uri = Uri.parse(
+      '/iot/v1/devices/$deviceId/history/sensor',
+    ).replace(queryParameters: params.isEmpty ? null : params);
+
+    final response = await apiClient.get(uri.toString());
+    if (response.statusCode == 200) {
+      final list = jsonDecode(response.body) as List<dynamic>;
+      return list
+          .map((e) => SensorLogEntry.fromJson(e as Map<String, dynamic>))
+          .toList();
+    }
+    throw Exception(
+      _extractErrorMessage(response.body, response.statusCode, 'Gagal memuat sensor history'),
+    );
+  }
+
+  /// Mengambil log aktuator untuk device tertentu.
+  Future<List<ActuatorLogEntry>> getActuatorHistory(
+    String deviceId, {
+    String? channelId,
+    int? from,
+    int? to,
+    int? limit,
+  }) async {
+    final params = <String, String>{};
+    if (channelId != null && channelId.isNotEmpty) params['channel'] = channelId;
+    if (from != null) params['from'] = from.toString();
+    if (to != null) params['to'] = to.toString();
+    if (limit != null) params['limit'] = limit.toString();
+
+    final uri = Uri.parse(
+      '/iot/v1/devices/$deviceId/history/actuator',
+    ).replace(queryParameters: params.isEmpty ? null : params);
+
+    final response = await apiClient.get(uri.toString());
+    if (response.statusCode == 200) {
+      final list = jsonDecode(response.body) as List<dynamic>;
+      return list
+          .map((e) => ActuatorLogEntry.fromJson(e as Map<String, dynamic>))
+          .toList();
+    }
+    throw Exception(
+      _extractErrorMessage(response.body, response.statusCode, 'Gagal memuat actuator history'),
+    );
+  }
+
   void dispose() {
     _pingTimer?.cancel();
     _socket?.close();

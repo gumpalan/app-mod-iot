@@ -28,6 +28,7 @@ class _DashboardEditorScreenState extends State<DashboardEditorScreen> {
   late List<DashboardWidgetConfig> _widgets;
 
   List<IotDevice> _devices = [];
+  HistoryCapabilities _historyCaps = HistoryCapabilities.none();
   bool _isLoading = true;
   bool _isSaving = false;
 
@@ -44,6 +45,10 @@ class _DashboardEditorScreenState extends State<DashboardEditorScreen> {
       _isLoading = false;
     }
     _loadDevices();
+    // Load capabilities history di background — tidak blocking
+    widget.iotService.getHistoryCapabilities().then((caps) {
+      if (mounted) setState(() => _historyCaps = caps);
+    });
   }
 
   @override
@@ -177,6 +182,7 @@ class _DashboardEditorScreenState extends State<DashboardEditorScreen> {
       ),
       builder: (ctx) => _AddWidgetModal(
         devices: _devices,
+        historyCaps: _historyCaps,
         onAdd: (newWidget) {
           setState(() => _widgets.add(newWidget));
         },
@@ -407,6 +413,10 @@ class _DashboardEditorScreenState extends State<DashboardEditorScreen> {
         return Icons.touch_app_rounded;
       case 'hold_button':
         return Icons.touch_app_rounded;
+      case 'chart':
+        return Icons.show_chart_rounded;
+      case 'actuator_log':
+        return Icons.history_rounded;
       default:
         return Icons.analytics_outlined;
     }
@@ -416,8 +426,13 @@ class _DashboardEditorScreenState extends State<DashboardEditorScreen> {
 class _AddWidgetModal extends StatefulWidget {
   final List<IotDevice> devices;
   final ValueChanged<DashboardWidgetConfig> onAdd;
+  final HistoryCapabilities historyCaps;
 
-  const _AddWidgetModal({required this.devices, required this.onAdd});
+  const _AddWidgetModal({
+    required this.devices,
+    required this.onAdd,
+    this.historyCaps = const HistoryCapabilities(),
+  });
 
   @override
   State<_AddWidgetModal> createState() => _AddWidgetModalState();
@@ -473,6 +488,15 @@ class _AddWidgetModalState extends State<_AddWidgetModal> {
             child: Text('Kartu Angka (Value Card)'),
           ),
         );
+        // Chart hanya muncul jika server aktifkan sensor history
+        if (widget.historyCaps.sensor) {
+          items.add(
+            const DropdownMenuItem(
+              value: 'chart',
+              child: Text('Grafik Riwayat (Chart)'),
+            ),
+          );
+        }
       } else {
         items.add(
           const DropdownMenuItem(
@@ -502,6 +526,15 @@ class _AddWidgetModalState extends State<_AddWidgetModal> {
             child: Text('Tombol Saklar (Push Switch)'),
           ),
         );
+        // Log aktuator hanya muncul jika server aktifkan actuator history
+        if (widget.historyCaps.actuator) {
+          items.add(
+            const DropdownMenuItem(
+              value: 'actuator_log',
+              child: Text('Log Aktivasi (Actuator Log)'),
+            ),
+          );
+        }
       } else if (isNum) {
         items.add(
           const DropdownMenuItem(
@@ -520,6 +553,14 @@ class _AddWidgetModalState extends State<_AddWidgetModal> {
             const DropdownMenuItem(
               value: 'value_card',
               child: Text('Kartu Angka (Value Card)'),
+            ),
+          );
+        }
+        if (widget.historyCaps.actuator) {
+          items.add(
+            const DropdownMenuItem(
+              value: 'actuator_log',
+              child: Text('Log Aktivasi (Actuator Log)'),
             ),
           );
         }

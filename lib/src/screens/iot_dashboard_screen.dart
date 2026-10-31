@@ -34,6 +34,14 @@ class _IotDashboardScreenState extends State<IotDashboardScreen> {
   final Map<String, Map<String, dynamic>> _deviceStates =
       {}; // devID -> chID -> val
 
+  // History
+  HistoryCapabilities _historyCaps = HistoryCapabilities.none();
+  // cache: key = "deviceId/channelId" -> data
+  final Map<String, List<SensorLogEntry>> _sensorCache = {};
+  final Map<String, List<ActuatorLogEntry>> _actuatorCache = {};
+  final Map<String, bool> _historyLoading = {};
+  final Map<String, String?> _historyError = {};
+
   bool _isLoading = true;
 
   @override
@@ -73,8 +81,64 @@ class _IotDashboardScreenState extends State<IotDashboardScreen> {
     _activeDashboardId =
         _service.activeLayout.value ?? prefs.getString(kIotActiveDashboardPref);
     _service.activeLayout.value = _activeDashboardId;
+    // Muat capabilities history di background — tidak memblokir UI
+    _service.getHistoryCapabilities().then((caps) {
+      if (mounted) setState(() => _historyCaps = caps);
+    });
     await _loadDashboardsAndDevices();
     _connectWebSocket();
+  }
+
+  String _historyKey(String deviceId, String channelId) => '$deviceId/$channelId';
+
+  Future<void> _fetchSensorHistory(String deviceId, String channelId) async {
+    final key = _historyKey(deviceId, channelId);
+    if (_historyLoading[key] == true) return;
+    setState(() {
+      _historyLoading[key] = true;
+      _historyError[key] = null;
+    });
+    try {
+      final data = await _service.getSensorHistory(deviceId, channelId: channelId);
+      if (mounted) {
+        setState(() {
+          _sensorCache[key] = data;
+          _historyLoading[key] = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _historyError[key] = e.toString();
+          _historyLoading[key] = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _fetchActuatorHistory(String deviceId, String channelId) async {
+    final key = _historyKey(deviceId, channelId);
+    if (_historyLoading[key] == true) return;
+    setState(() {
+      _historyLoading[key] = true;
+      _historyError[key] = null;
+    });
+    try {
+      final data = await _service.getActuatorHistory(deviceId, channelId: channelId);
+      if (mounted) {
+        setState(() {
+          _actuatorCache[key] = data;
+          _historyLoading[key] = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _historyError[key] = e.toString();
+          _historyLoading[key] = false;
+        });
+      }
+    }
   }
 
   Future<void> _loadDashboardsAndDevices() async {
@@ -428,6 +492,44 @@ class _IotDashboardScreenState extends State<IotDashboardScreen> {
           currentState: currentVal,
           onCommand: _handleCommand,
         );
+
+      // Widget history — hanya dirender jika server mendukung
+      case 'chart':
+        if (!_historyCaps.sensor) {
+          return const SizedBox.shrink(); // server tidak aktifkan sensor history
+        }
+        final key = _historyKey(w.deviceId, w.channelId);
+        // Trigger fetch saat pertama kali widget muncul (jika belum ada cache)
+        if (!_sensorCache.containsKey(key) && _historyLoading[key] != true) {
+          WidgetsBinding.instance.addPostFrameCallback(
+            (_) => _fetchSensorHistory(w.deviceId, w.channelId),
+          );
+        }
+        return SensorChartWidget(
+          title: w.title,
+          unit: w.unit,
+          entries: _sensorCache[key] ?? [],
+          isLoading: _historyLoading[key] ?? false,
+          error: _historyError[key],
+        );
+
+      case 'actuator_log':
+        if (!_historyCaps.actuator) {
+          return const SizedBox.shrink();
+        }
+        final key = _historyKey(w.deviceId, w.channelId);
+        if (!_actuatorCache.containsKey(key) && _historyLoading[key] != true) {
+          WidgetsBinding.instance.addPostFrameCallback(
+            (_) => _fetchActuatorHistory(w.deviceId, w.channelId),
+          );
+        }
+        return ActuatorLogWidget(
+          title: w.title,
+          entries: _actuatorCache[key] ?? [],
+          isLoading: _historyLoading[key] ?? false,
+          error: _historyError[key],
+        );
+
       case 'toggle':
       default:
         return IotToggleWidget(

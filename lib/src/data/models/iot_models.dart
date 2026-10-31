@@ -346,3 +346,125 @@ class AutomationRule {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// History Models
+// ---------------------------------------------------------------------------
+
+/// Kemampuan history yang aktif di server IoT.
+class HistoryCapabilities {
+  final bool enabled;
+  final bool sensor;
+  final bool actuator;
+
+  const HistoryCapabilities({
+    this.enabled = false,
+    this.sensor = false,
+    this.actuator = false,
+  });
+
+  factory HistoryCapabilities.fromJson(Map<String, dynamic> json) {
+    return HistoryCapabilities(
+      enabled: json['enabled'] as bool? ?? false,
+      sensor: json['sensor'] as bool? ?? false,
+      actuator: json['actuator'] as bool? ?? false,
+    );
+  }
+
+  /// Semua fitur mati — fallback saat server tidak mendukung endpoint capabilities.
+  factory HistoryCapabilities.none() => const HistoryCapabilities();
+}
+
+/// Satu pembacaan sensor dari perangkat IoT.
+class SensorLogEntry {
+  final String id;
+  final String deviceId;
+  final String channelId;
+  final String value;
+  final int recordedAt; // unix timestamp detik
+
+  const SensorLogEntry({
+    required this.id,
+    required this.deviceId,
+    required this.channelId,
+    required this.value,
+    required this.recordedAt,
+  });
+
+  factory SensorLogEntry.fromJson(Map<String, dynamic> json) {
+    return SensorLogEntry(
+      id: json['id'] as String? ?? '',
+      deviceId: json['deviceId'] as String? ?? '',
+      channelId: json['channelId'] as String? ?? '',
+      value: json['value']?.toString() ?? '',
+      recordedAt: json['recordedAt'] as int? ?? 0,
+    );
+  }
+
+  DateTime get dateTime =>
+      DateTime.fromMillisecondsSinceEpoch(recordedAt * 1000);
+
+  double? get numericValue => double.tryParse(value);
+}
+
+/// Satu eksekusi aktuator beserta konteks sumbernya.
+class ActuatorLogEntry {
+  final String id;
+  final String deviceId;
+  final String channelId;
+  final String value;
+
+  /// Sumber eksekusi: "app" | "automation" | "schedule" | "device"
+  final String source;
+
+  /// ID pengguna (source=app) atau ID aturan (source=automation/schedule).
+  final String? actorId;
+
+  /// Nama tampilan aktor (denormalisasi untuk UI).
+  final String? actorName;
+
+  final int recordedAt;
+
+  const ActuatorLogEntry({
+    required this.id,
+    required this.deviceId,
+    required this.channelId,
+    required this.value,
+    required this.source,
+    this.actorId,
+    this.actorName,
+    required this.recordedAt,
+  });
+
+  factory ActuatorLogEntry.fromJson(Map<String, dynamic> json) {
+    return ActuatorLogEntry(
+      id: json['id'] as String? ?? '',
+      deviceId: json['deviceId'] as String? ?? '',
+      channelId: json['channelId'] as String? ?? '',
+      value: json['value']?.toString() ?? '',
+      source: json['source'] as String? ?? 'app',
+      actorId: json['actorId'] as String?,
+      actorName: json['actorName'] as String?,
+      recordedAt: json['recordedAt'] as int? ?? 0,
+    );
+  }
+
+  DateTime get dateTime =>
+      DateTime.fromMillisecondsSinceEpoch(recordedAt * 1000);
+
+  /// Label ramah untuk ditampilkan di UI berdasarkan source.
+  String get sourceLabel {
+    switch (source) {
+      case 'app':
+        return 'App';
+      case 'automation':
+        return 'Otomasi';
+      case 'schedule':
+        return 'Jadwal';
+      case 'device':
+        return 'Perangkat';
+      default:
+        return source;
+    }
+  }
+}
